@@ -63,20 +63,15 @@ class StaticWebAppMixin(object):
     )
 
 
-class PHPFcidWebAppMixin(StaticWebAppMixin):
-    backend = backends.phpfcgid.PHPFcgidBackend
-    type_value = 'php5.2'
+class PHPFPMWebAppMixin(StaticWebAppMixin):
+    backend = backends.php.PHPController
+    type_value = 'php5.5'
     token = random_ascii(100)
     page = (
         'index.php',
         '<?php print("Hello World! %s");\n?>\n' % token,
         'Hello World! %s' % token,
     )
-
-
-class PHPFPMWebAppMixin(PHPFcidWebAppMixin):
-    backend = backends.phpfpm.PHPFPMBackend
-    type_value = 'php5.5'
 
 
 class RESTWebAppMixin(object):
@@ -117,10 +112,6 @@ class AdminWebAppMixin(WebAppMixin):
 
 
 class StaticRESTWebAppTest(StaticWebAppMixin, RESTWebAppMixin, WebAppMixin, BaseLiveServerTestCase):
-    pass
-
-
-class PHPFcidRESTWebAppTest(PHPFcidWebAppMixin, RESTWebAppMixin, WebAppMixin, BaseLiveServerTestCase):
     pass
 
 
