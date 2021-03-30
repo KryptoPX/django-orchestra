@@ -36,8 +36,8 @@ def monitor(resource_id, ids=None):
             for obj in model.objects.filter(**kwargs):
                 op = Operation(backend, obj, Operation.MONITOR)
                 monitorings.append(op)
-            logs += Operation.execute(monitorings, async=False)
-        
+            logs += Operation.execute(monitorings, run_async=False)
+
         kwargs = {'id__in': ids} if ids else {}
         # Update used resources and trigger resource exceeded and revovery
         triggers = []

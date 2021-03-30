@@ -71,43 +71,43 @@ def runiterator(command, display=False, stdin=b''):
     """ Subprocess wrapper for running commands concurrently """
     if display:
         sys.stderr.write("\n\033[1m $ %s\033[0m\n" % command)
-    
+
     p = subprocess.Popen(command, shell=True, executable='/bin/bash',
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-    
+
     p.stdin.write(stdin)
     p.stdin.close()
     yield
-    
+
     make_async(p.stdout)
     make_async(p.stderr)
-    
+
     # Async reading of stdout and sterr
     while True:
         stdout = b''
         stderr = b''
         # Get complete unicode chunks
         select.select([p.stdout, p.stderr], [], [])
-        
+
         stdoutPiece = read_async(p.stdout)
         stderrPiece = read_async(p.stderr)
-        
+
         stdout += (stdoutPiece or b'')
         #.decode('ascii'), errors='replace')
         stderr += (stderrPiece or b'')
         #.decode('ascii'), errors='replace')
-        
+
         if display and stdout:
             sys.stdout.write(stdout.decode('utf8'))
         if display and stderr:
             sys.stderr.write(stderr.decode('utf8'))
-        
+
         state = _Attribute(stdout)
         state.stderr = stderr
         state.exit_code =  p.poll()
         state.command = command
         yield state
-        
+
         if state.exit_code != None:
             p.stdout.close()
             p.stderr.close()
@@ -121,12 +121,12 @@ def join(iterator, display=False, silent=False, valid_codes=(0,)):
     for state in iterator:
         stdout += state.stdout
         stderr += state.stderr
-    
+
     exit_code = state.exit_code
-    
+
     out = _Attribute(stdout.strip())
     err = stderr.strip()
-    
+
     out.failed = False
     out.exit_code = exit_code
     out.stderr = err
@@ -138,7 +138,7 @@ def join(iterator, display=False, silent=False, valid_codes=(0,)):
             sys.stderr.write("\n\033[1;31mCommandError: %s %s\033[m\n" % (msg, err))
         if not silent:
             raise CommandError("%s %s" % (msg, err))
-    
+
     out.succeeded = not out.failed
     return out
 
@@ -151,10 +151,10 @@ def joinall(iterators, **kwargs):
     return results
 
 
-def run(command, display=False, valid_codes=(0,), silent=False, stdin=b'', async=False):
+def run(command, display=False, valid_codes=(0,), silent=False, stdin=b'', run_async=False):
     iterator = runiterator(command, display, stdin)
     next(iterator)
-    if async:
+    if run_async:
         return iterator
     return join(iterator, display=display, silent=silent, valid_codes=valid_codes)
 
@@ -213,7 +213,7 @@ class LockFile(object):
         self.lockfile = lockfile
         self.expire = expire
         self.unlocked = unlocked
-    
+
     def acquire(self):
         if os.path.exists(self.lockfile):
             lock_time = os.path.getmtime(self.lockfile)
@@ -222,17 +222,17 @@ class LockFile(object):
                 return False
         touch(self.lockfile)
         return True
-    
+
     def release(self):
         os.remove(self.lockfile)
-    
+
     def __enter__(self):
         if not self.unlocked:
             if not self.acquire():
                 raise OperationLocked("%s lock file exists and its mtime is less than %s seconds" %
                     (self.lockfile, self.expire))
         return True
-    
+
     def __exit__(self, type, value, traceback):
         if not self.unlocked:
             self.release()
@@ -240,4 +240,4 @@ class LockFile(object):
 
 def touch_wsgi(delay=0):
     from . import paths
-    run('{ sleep %i && touch %s/wsgi.py; } &' % (delay, paths.get_project_dir()), async=True)
+    run('{ sleep %i && touch %s/wsgi.py; } &' % (delay, paths.get_project_dir()), run_async=True)

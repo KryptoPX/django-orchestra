@@ -105,7 +105,7 @@ def get_backend_url(ids):
 
 def get_messages(logs):
     messages = []
-    total, successes, async = 0, 0, 0
+    total, successes, run_async = 0, 0, 0
     ids = []
     async_ids = []
     for log in logs:
@@ -118,17 +118,17 @@ def get_messages(logs):
         if log.is_success:
             successes += 1
         elif not log.has_finished:
-            async += 1
+            run_async += 1
             async_ids.append(log.id)
-    errors = total-successes-async
+    errors = total-successes-run_async
     url = get_backend_url(ids)
     async_url = get_backend_url(async_ids)
     async_msg = ''
-    if async:
+    if run_async:
         async_msg = ungettext(
             _('<a href="{async_url}">{name}</a> is running on the background'),
-            _('<a href="{async_url}">{async} backends</a> are running on the background'),
-            async)
+            _('<a href="{async_url}">{run_async} backends</a> are running on the background'),
+            run_async)
     if errors:
         if total == 1:
             msg = _('<a href="{url}">{name}</a> has fail to execute')
@@ -139,7 +139,7 @@ def get_messages(logs):
                 errors)
         if async_msg:
             msg += ', ' + str(async_msg)
-        msg = msg.format(errors=errors, async=async, async_url=async_url, total=total, url=url,
+        msg = msg.format(errors=errors, run_async=run_async, async_url=async_url, total=total, url=url,
             name=log.backend)
         messages.append(('error', msg + '.'))
     elif successes:
@@ -158,12 +158,12 @@ def get_messages(logs):
                 _('<a href="{url}">{total} backends</a> have been executed'),
                 total)
         msg = msg.format(
-            total=total, url=url, async_url=async_url, async=async, successes=successes,
+            total=total, url=url, async_url=async_url, run_async=run_async, successes=successes,
             name=log.backend
         )
         messages.append(('success', msg + '.'))
     else:
-        msg = async_msg.format(url=url, async_url=async_url, async=async, name=log.backend)
+        msg = async_msg.format(url=url, async_url=async_url, run_async=run_async, name=log.backend)
         messages.append(('success', msg + '.'))
     return messages
 
