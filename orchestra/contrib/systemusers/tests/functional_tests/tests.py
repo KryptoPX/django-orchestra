@@ -2,6 +2,7 @@ import ftplib
 import os
 import re
 import time
+import unittest
 from functools import partial
 
 import paramiko
@@ -21,6 +22,7 @@ from ... import backends
 from ...models import SystemUser
 
 
+TEST_REST_API = int(os.getenv('TEST_REST_API', '0'))
 r = partial(run, silent=True, display=False)
 sshr = partial(sshrun, silent=True, display=False)
 
@@ -185,6 +187,7 @@ class SystemUserMixin(object):
 # TODO test resources
 
 
+@unittest.skipUnless(TEST_REST_API, "REST API tests")
 class RESTSystemUserMixin(SystemUserMixin):
     def setUp(self):
         super(RESTSystemUserMixin, self).setUp()

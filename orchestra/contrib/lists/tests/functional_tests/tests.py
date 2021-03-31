@@ -1,23 +1,25 @@
 import os
 import smtplib
 import time
-import requests
+import unittest
 from email.mime.text import MIMEText
 
+import requests
 from django.conf import settings as djsettings
 from django.core.management.base import CommandError
 from django.core.urlresolvers import reverse
-from selenium.webdriver.support.select import Select
-
 from orchestra.admin.utils import change_url
 from orchestra.contrib.domains.models import Domain
-from orchestra.contrib.orchestration.models import Server, Route
+from orchestra.contrib.orchestration.models import Route, Server
 from orchestra.utils.sys import sshrun
-from orchestra.utils.tests import (BaseLiveServerTestCase, random_ascii, snapshot_on_error,
-        save_response_on_error)
+from orchestra.utils.tests import (BaseLiveServerTestCase, random_ascii,
+                                   save_response_on_error, snapshot_on_error)
+from selenium.webdriver.support.select import Select
 
 from ... import backends, settings
 from ...models import List
+
+TEST_REST_API = int(os.getenv('TEST_REST_API', '0'))
 
 
 class ListMixin(object):
@@ -27,12 +29,12 @@ class ListMixin(object):
         'orchestra.contrib.domains',
         'orchestra.contrib.lists',
     )
-    
+
     def setUp(self):
         super(ListMixin, self).setUp()
         self.add_route()
         djsettings.DEBUG = True
-    
+
     def validate_add(self, name, address=None):
         sshrun(self.MASTER_SERVER, 'list_members %s' % name, display=False)
         if not address:
@@ -44,11 +46,11 @@ class ListMixin(object):
         sshrun(self.MASTER_SERVER,
             'grep -v ":\|^\s\|^$\|-\|\.\|\s" /var/spool/mail/nobody | base64 -d | grep "%s"'
             % request_address, display=False)
-    
+
     def validate_login(self, name, password):
         url = 'http://%s/cgi-bin/mailman/admin/%s' % (settings.LISTS_DEFAULT_DOMAIN, name)
         self.assertEqual(200, requests.post(url, data={'adminpw': password}).status_code)
-    
+
     def validate_delete(self, name):
         context = {
             'name': name,
@@ -62,7 +64,7 @@ class ListMixin(object):
             'grep "^\s*$(domain)s\s*$" %(virtual_domain)s' % context, display=False)
         self.assertRaises(CommandError, sshrun, self.MASTER_SERVER,
             'list_lists | grep -i "^\s*%(name)s\s"' % context, display=False)
-    
+
     def subscribe(self, subscribe_address):
         msg = MIMEText('')
         msg['To'] = subscribe_address
@@ -76,12 +78,12 @@ class ListMixin(object):
             server.sendmail(msg['From'], msg['To'], msg.as_string())
         finally:
             server.quit()
-    
+
     def add_route(self):
         server = Server.objects.create(name=self.MASTER_SERVER)
         backend = backends.MailmanController.get_name()
         Route.objects.create(backend=backend, match=True, host=server)
-    
+
     def test_add(self):
         name = '%s_list' % random_ascii(10)
         password = '@!?%spppP001' % random_ascii(5)
@@ -90,7 +92,7 @@ class ListMixin(object):
         self.validate_add(name)
         self.validate_login(name, password)
         self.addCleanup(self.delete, name)
-    
+
     def test_add_with_address(self):
         name = '%s_list' % random_ascii(10)
         password = '@!?%spppP001' % random_ascii(5)
@@ -102,7 +104,7 @@ class ListMixin(object):
         self.addCleanup(self.delete, name)
         # Mailman doesn't support changing the address, only the domain
         self.validate_add(name, address="%s@%s" % (address_name, address_domain))
-    
+
     def test_change_password(self):
         name = '%s_list' % random_ascii(10)
         password = '@!?%spppP001' % random_ascii(5)
@@ -113,7 +115,7 @@ class ListMixin(object):
         new_password = '@!?%spppP001' % random_ascii(5)
         self.change_password(name, new_password)
         self.validate_login(name, new_password)
-    
+
     def test_change_domain(self):
         name = '%s_list' % random_ascii(10)
         password = '@!?%spppP001' % random_ascii(5)
@@ -128,7 +130,7 @@ class ListMixin(object):
         address_domain = Domain.objects.create(name=domain_name, account=self.account)
         self.update_domain(name, domain_name)
         self.validate_add(name, address="%s@%s" % (address_name, address_domain))
-    
+
     def test_change_address_name(self):
         name = '%s_list' % random_ascii(10)
         password = '@!?%spppP001' % random_ascii(5)
@@ -142,7 +144,7 @@ class ListMixin(object):
         address_name = '%s_name' % random_ascii(10)
         self.update_address_name(name, address_name)
         self.validate_add(name, address="%s@%s" % (address_name, address_domain))
-    
+
     def test_delete(self):
         name = '%s_list' % random_ascii(10)
         password = '@!?%spppP001' % random_ascii(5)
@@ -158,11 +160,12 @@ class ListMixin(object):
         self.validate_delete(name)
 
 
+@unittest.skipUnless(TEST_REST_API, "REST API tests")
 class RESTListMixin(ListMixin):
     def setUp(self):
         super(RESTListMixin, self).setUp()
         self.rest_login()
-    
+
     @save_response_on_error
     def add(self, name, password, admin_email, address_name=None, address_domain=None):
         extra = {}
@@ -172,22 +175,22 @@ class RESTListMixin(ListMixin):
                 'address_domain': self.rest.domains.retrieve(name=address_domain.name).get(),
             })
         self.rest.lists.create(name=name, password=password, admin_email=admin_email, **extra)
-    
+
     @save_response_on_error
     def delete(self, name):
         self.rest.lists.retrieve(name=name).delete()
-    
+
     @save_response_on_error
     def change_password(self, name, password):
         mail_list = self.rest.lists.retrieve(name=name).get()
         mail_list.set_password(password)
-    
+
     @save_response_on_error
     def update_domain(self, name, domain_name):
         mail_list = self.rest.lists.retrieve(name=name).get()
         domain = self.rest.domains.retrieve(name=domain_name).get()
         mail_list.update(address_domain=domain)
-    
+
     @save_response_on_error
     def update_address_name(self, name, address_name):
         mail_list = self.rest.lists.retrieve(name=name).get()
@@ -198,70 +201,70 @@ class AdminListMixin(ListMixin):
     def setUp(self):
         super(AdminListMixin, self).setUp()
         self.admin_login()
-    
+
     @snapshot_on_error
     def add(self, name, password, admin_email, address_name=None, address_domain=None):
         url = self.live_server_url + reverse('admin:lists_list_add')
         self.selenium.get(url)
-        
+
         name_field = self.selenium.find_element_by_id('id_name')
         name_field.send_keys(name)
-        
+
         password_field = self.selenium.find_element_by_id('id_password1')
         password_field.send_keys(password)
         password_field = self.selenium.find_element_by_id('id_password2')
         password_field.send_keys(password)
-        
+
         admin_email_field = self.selenium.find_element_by_id('id_admin_email')
         admin_email_field.send_keys(admin_email)
-        
+
         if address_name:
             address_name_field = self.selenium.find_element_by_id('id_address_name')
             address_name_field.send_keys(address_name)
-            
+
             domain = Domain.objects.get(name=address_domain)
             domain_input = self.selenium.find_element_by_id('id_address_domain')
             domain_select = Select(domain_input)
             domain_select.select_by_value(str(domain.pk))
-        
+
         name_field.submit()
         self.assertNotEqual(url, self.selenium.current_url)
-    
+
     @snapshot_on_error
     def delete(self, name):
         mail_list = List.objects.get(name=name)
         self.admin_delete(mail_list)
-    
+
     @snapshot_on_error
     def change_password(self, name, password):
         mail_list = List.objects.get(name=name)
         self.admin_change_password(mail_list, password)
-    
+
     @snapshot_on_error
     def update_domain(self, name, domain_name):
         mail_list = List.objects.get(name=name)
         url = self.live_server_url + change_url(mail_list)
         self.selenium.get(url)
-        
+
         domain = Domain.objects.get(name=domain_name)
         domain_input = self.selenium.find_element_by_id('id_address_domain')
         domain_select = Select(domain_input)
         domain_select.select_by_value(str(domain.pk))
-        
+
         save = self.selenium.find_element_by_name('_save')
         save.submit()
         self.assertNotEqual(url, self.selenium.current_url)
-    
+
     @snapshot_on_error
     def update_address_name(self, name, address_name):
         mail_list = List.objects.get(name=name)
         url = self.live_server_url + change_url(mail_list)
         self.selenium.get(url)
-        
+
         address_name_field = self.selenium.find_element_by_id('id_address_name')
         address_name_field.clear()
         address_name_field.send_keys(address_name)
-        
+
         save = self.selenium.find_element_by_name('_save')
         save.submit()
         self.assertNotEqual(url, self.selenium.current_url)

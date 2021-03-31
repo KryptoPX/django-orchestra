@@ -1,14 +1,17 @@
 import ftplib
 import os
+import unittest
 from io import StringIO
 
 from django.conf import settings as djsettings
-
-from orchestra.contrib.orchestration.models import Server, Route
+from orchestra.contrib.orchestration.models import Route, Server
 from orchestra.contrib.systemusers.backends import UNIXUserController
-from orchestra.utils.tests import BaseLiveServerTestCase, random_ascii, snapshot_on_error, save_response_on_error
+from orchestra.utils.tests import BaseLiveServerTestCase, random_ascii, save_response_on_error, snapshot_on_error
 
 from ... import backends
+
+
+TEST_REST_API = int(os.getenv('TEST_REST_API', '0'))
 
 
 class WebAppMixin(object):
@@ -74,6 +77,7 @@ class PHPFPMWebAppMixin(StaticWebAppMixin):
     )
 
 
+@unittest.skipUnless(TEST_REST_API, "REST API tests")
 class RESTWebAppMixin(object):
     def setUp(self):
         super(RESTWebAppMixin, self).setUp()

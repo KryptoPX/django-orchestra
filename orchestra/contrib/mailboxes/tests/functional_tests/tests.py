@@ -4,6 +4,7 @@ import poplib
 import smtplib
 import time
 import textwrap
+import unittest
 from email.mime.text import MIMEText
 
 from django.apps import apps
@@ -20,6 +21,8 @@ from orchestra.utils.tests import BaseLiveServerTestCase, random_ascii, snapshot
 
 from ... import backends, settings
 from ...models import Mailbox
+
+TEST_REST_API = int(os.getenv('TEST_REST_API', '0'))
 
 
 class MailboxMixin(object):
@@ -235,6 +238,7 @@ class MailboxMixin(object):
 # TODO test autoreply
 
 
+@unittest.skipUnless(TEST_REST_API, "REST API tests")
 class RESTMailboxMixin(MailboxMixin):
     def setUp(self):
         super(RESTMailboxMixin, self).setUp()
