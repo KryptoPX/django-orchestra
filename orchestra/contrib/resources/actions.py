@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.shortcuts import redirect, render
 from django.utils.safestring import mark_safe
 from django.utils.translation import ungettext, ugettext_lazy as _

@@ -6,7 +6,7 @@ from django.contrib import admin, messages
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.contenttypes.forms import BaseGenericInlineFormSet
 from django.contrib.admin.utils import unquote
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.templatetags.static import static
@@ -58,7 +58,7 @@ class ResourceAdmin(ExtendedModelAdmin):
         'name': ('verbose_name',)
     }
     list_select_related = ('content_type', 'crontab',)
-    
+
     def change_view(self, request, object_id, form_url='', extra_context=None):
         """ Remaind user when monitor routes are not configured """
         if request.method == 'GET':
@@ -78,7 +78,7 @@ class ResourceAdmin(ExtendedModelAdmin):
                 })
         return super(ResourceAdmin, self).change_view(request, object_id, form_url=form_url,
                 extra_context=extra_context)
-    
+
     def save_model(self, request, obj, form, change):
         super(ResourceAdmin, self).save_model(request, obj, form, change)
         # best-effort
@@ -93,7 +93,7 @@ class ResourceAdmin(ExtendedModelAdmin):
         modeladmin.inlines = inlines
         # reload Not always work
         sys.touch_wsgi()
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ filter service content_types """
         if db_field.name == 'content_type':
@@ -127,10 +127,10 @@ class ResourceDataAdmin(ExtendedModelAdmin):
     change_view_actions = actions
     ordering = ('-updated_at',)
     list_select_related = ('resource__content_type', 'content_type')
-    
+
     resource_link = admin_link('resource')
     display_updated = admin_date('updated_at', short_description=_("Updated"))
-    
+
     def get_urls(self):
         """Returns the additional urls for the change view links"""
         urls = super(ResourceDataAdmin, self).get_urls()
@@ -150,7 +150,7 @@ class ResourceDataAdmin(ExtendedModelAdmin):
                 name='%s_%s_list_related' % (opts.app_label, opts.model_name)
             ),
         ] + urls
-    
+
     def display_used(self, rdata):
         if rdata.used is None:
             return ''
@@ -159,15 +159,15 @@ class ResourceDataAdmin(ExtendedModelAdmin):
     display_used.short_description = _("Used")
     display_used.admin_order_field = 'used'
     display_used.allow_tags = True
-    
+
     def has_add_permission(self, *args, **kwargs):
         return False
-    
+
     def used_monitordata_view(self, request, object_id):
         url = reverse('admin:resources_monitordata_changelist')
         url += '?resource_data=%s' % object_id
         return redirect(url)
-    
+
     def list_related_view(self, request, app_name, model_name, object_id):
         resources = Resource.objects.select_related('content_type')
         resource_models = {r.content_type.model_class(): r.content_type_id for r in resources}
@@ -203,9 +203,9 @@ class MonitorDataAdmin(ExtendedModelAdmin):
     list_select_related = ('content_type',)
     search_fields = ('content_object_repr',)
     date_hierarchy = 'created_at'
-    
+
     display_created = admin_date('created_at', short_description=_("Created"))
-    
+
     def filter_used_monitordata(self, request, queryset):
         query_string = parse_qs(request.META['QUERY_STRING'])
         resource_data = query_string.get('resource_data')
@@ -221,7 +221,7 @@ class MonitorDataAdmin(ExtendedModelAdmin):
                     ids += dataset.values_list('id', flat=True)
             return queryset.filter(id__in=ids)
         return queryset
-    
+
     def get_queryset(self, request):
         queryset = super(MonitorDataAdmin, self).get_queryset(request)
         queryset = self.filter_used_monitordata(request, queryset)
@@ -239,13 +239,13 @@ def resource_inline_factory(resources):
     class ResourceInlineFormSet(BaseGenericInlineFormSet):
         def total_form_count(self, resources=resources):
             return len(resources)
-        
+
         @cached
         def get_queryset(self):
             """ Filter disabled resources """
             queryset = super(ResourceInlineFormSet, self).get_queryset()
             return queryset.filter(resource__is_active=True).select_related('resource')
-        
+
         @cached_property
         def forms(self, resources=resources):
             forms = []
@@ -276,7 +276,7 @@ def resource_inline_factory(resources):
             for i, resource in enumerate(resources_copy, len(queryset)):
                 forms.append(self._construct_form(i, resource=resource))
             return forms
-    
+
     class ResourceInline(GenericTabularInline):
         model = ResourceData
         verbose_name_plural = _("resources")
@@ -287,14 +287,14 @@ def resource_inline_factory(resources):
             'verbose_name', 'display_used', 'display_updated', 'allocated', 'unit',
         )
         readonly_fields = ('display_used', 'display_updated',)
-        
+
         class Media:
             css = {
                 'all': ('orchestra/css/hide-inline-id.css',)
             }
-        
+
         display_updated = admin_date('updated_at', default=_("Never"))
-        
+
         def get_fieldsets(self, request, obj=None):
             if obj:
                 opts = self.parent_model._meta
@@ -303,7 +303,7 @@ def resource_inline_factory(resources):
                 link = '<a href="%s">%s</a>' % (url, _("List related"))
                 self.verbose_name_plural = mark_safe(_("Resources") + ' ' + link)
             return super(ResourceInline, self).get_fieldsets(request, obj)
-        
+
         def display_used(self, rdata):
             update = ''
             history = ''
@@ -330,11 +330,11 @@ def resource_inline_factory(resources):
             return _("No monitor")
         display_used.short_description = _("Used")
         display_used.allow_tags = True
-        
+
         def has_add_permission(self, *args, **kwargs):
             """ Hidde add another """
             return False
-    
+
     return ResourceInline
 
 

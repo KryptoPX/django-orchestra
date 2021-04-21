@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib import admin
-from django.core.urlresolvers import resolve
+from django.urls import resolve
 from django.db.models import Q
 from django.utils.encoding import force_text
 from django.utils.translation import ugettext_lazy as _
@@ -24,11 +24,11 @@ class WebsiteDirectiveInline(admin.TabularInline):
     model = WebsiteDirective
     formset = WebsiteDirectiveInlineFormSet
     extra = 1
-    
+
     DIRECTIVES_HELP_TEXT = {
         op.name: force_text(op.help_text) for op in SiteDirective.get_plugins()
     }
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         if db_field.name == 'value':
             kwargs['widget'] = forms.TextInput(attrs={'size':'100'})
@@ -45,10 +45,10 @@ class ContentInline(AccountAdminMixin, admin.TabularInline):
     fields = ('webapp', 'webapp_link', 'webapp_type', 'path')
     readonly_fields = ('webapp_link', 'webapp_type')
     filter_by_account_fields = ['webapp']
-    
+
     webapp_link = admin_link('webapp', popup=True)
     webapp_link.short_description = _("Web App")
-    
+
     def webapp_type(self, content):
         if not content.pk:
             return ''
@@ -77,7 +77,7 @@ class WebsiteAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
     list_prefetch_related = ('domains', 'content_set__webapp')
     search_fields = ('name', 'account__username', 'domains__name', 'content__webapp__name')
     actions = (disable, enable, list_accounts)
-    
+
     def display_domains(self, website):
         domains = []
         for domain in website.domains.all():
@@ -87,7 +87,7 @@ class WebsiteAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
     display_domains.short_description = _("domains")
     display_domains.allow_tags = True
     display_domains.admin_order_field = 'domains'
-    
+
     def display_webapps(self, website):
         webapps = []
         for content in website.content_set.all():
@@ -104,7 +104,7 @@ class WebsiteAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
         return '<br>'.join(webapps)
     display_webapps.allow_tags = True
     display_webapps.short_description = _("Web apps")
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """
         Exclude domains with exhausted ports
@@ -124,7 +124,7 @@ class WebsiteAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
                 qset = Q(qset & ~Q(websites__pk=object_id))
             formfield.queryset = formfield.queryset.exclude(qset)
         return formfield
-    
+
     def _create_formsets(self, request, obj, change):
         """ bind contents formset to directive formset for unique location cross-validation """
         formsets, inline_instances = super(WebsiteAdmin, self)._create_formsets(request, obj, change)

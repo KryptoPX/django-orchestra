@@ -2,7 +2,7 @@ from functools import partial
 
 from django.contrib import messages
 from django.contrib.admin import actions
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import transaction
 from django.shortcuts import render, redirect
 from django.utils.safestring import mark_safe

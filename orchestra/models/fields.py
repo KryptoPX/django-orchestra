@@ -1,7 +1,7 @@
 import os
 
 from django.core import exceptions
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models
 from django.db.models.fields.files import FileField, FieldFile
 from django.utils.text import capfirst
@@ -21,34 +21,34 @@ class MultiSelectField(models.CharField):
             defaults['initial'] = self.get_default()
         defaults.update(kwargs)
         return MultiSelectFormField(**defaults)
-    
+
     def get_db_prep_value(self, value, connection=None, prepared=False):
         if isinstance(value, str):
             return value
         else:
             return ','.join(value)
-    
+
     def to_python(self, value):
         if value:
             if isinstance(value, str):
                 return value.split(',')
             return value
         return []
-    
+
     def from_db_value(self, value, expression, connection, context):
         if value:
             if isinstance(value, str):
                 return value.split(',')
             return value
         return []
-    
+
     def contribute_to_class(self, cls, name):
         super(MultiSelectField, self).contribute_to_class(cls, name)
         if self.choices:
             def func(self, field=name, choices=dict(self.choices)):
                 return ','.join([choices.get(value, value) for value in getattr(self, field)])
             setattr(cls, 'get_%s_display' % self.name, func)
-    
+
     def validate(self, value, model_instance):
         if self.choices:
             arr_choices = self.get_choices_selected(self.get_choices())
@@ -56,7 +56,7 @@ class MultiSelectField(models.CharField):
                 if (opt_select not in arr_choices):
                     msg = self.error_messages['invalid_choice'] % {'value': opt_select}
                     raise exceptions.ValidationError(msg)
-    
+
     def get_choices_selected(self, arr_choices=''):
         if not arr_choices:
             return False
@@ -79,11 +79,11 @@ class PrivateFieldFile(FieldFile):
         filename = os.path.basename(self.path)
         args = [app_label, model_name, field_name, pk, filename]
         return reverse('private-media', args=args)
-    
+
     @property
     def condition(self):
         return self.field.condition
-    
+
     @property
     def attachment(self):
         return self.field.attachment
@@ -91,7 +91,7 @@ class PrivateFieldFile(FieldFile):
 
 class PrivateFileField(FileField):
     attr_class = PrivateFieldFile
-    
+
     def __init__(self, verbose_name=None, name=None, upload_to='', storage=None, attachment=True,
                  condition=lambda request, instance: request.user.is_superuser, **kwargs):
         super(PrivateFileField, self).__init__(verbose_name, name, upload_to, storage, **kwargs)

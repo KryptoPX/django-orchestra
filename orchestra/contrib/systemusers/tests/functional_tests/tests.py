@@ -8,7 +8,7 @@ from functools import partial
 import paramiko
 from django.conf import settings as djsettings
 from django.core.management.base import CommandError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from selenium.webdriver.support.select import Select
 
 from orchestra.admin.utils import change_url

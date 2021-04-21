@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from fluent_dashboard import dashboard, appsettings
 from fluent_dashboard.modules import CmsAppIconList
@@ -11,7 +11,7 @@ class AppDefaultIconList(CmsAppIconList):
     def __init__(self, *args, **kwargs):
         self.icons = kwargs.pop('icons')
         super(AppDefaultIconList, self).__init__(*args, **kwargs)
-    
+
     def get_icon_for_model(self, app_name, model_name, default=None):
         icon = self.icons.get('.'.join((app_name, model_name)))
         return super(AppDefaultIconList, self).get_icon_for_model(app_name, model_name, default=icon)
@@ -19,7 +19,7 @@ class AppDefaultIconList(CmsAppIconList):
 
 class OrchestraIndexDashboard(dashboard.FluentIndexDashboard):
     """ Gets application modules from services, accounts and administration registries """
-    
+
     def __init__(self, **kwargs):
         super(dashboard.FluentIndexDashboard, self).__init__(**kwargs)
         self.children.append(self.get_personal_module())
@@ -27,7 +27,7 @@ class OrchestraIndexDashboard(dashboard.FluentIndexDashboard):
         recent_actions = self.get_recent_actions_module()
         recent_actions.enabled = True
         self.children.append(recent_actions)
-    
+
     def process_registered_view(self, module, view_name, options):
         app_name, name = view_name.split('_')[:-1]
         module.icons['.'.join((app_name, name))] = options.get('icon')
@@ -47,7 +47,7 @@ class OrchestraIndexDashboard(dashboard.FluentIndexDashboard):
             'title': options.get('verbose_name_plural'),
             'url': add_url,
         })
-    
+
     def get_application_modules(self):
         modules = []
         # Honor settings override, hacky. I Know

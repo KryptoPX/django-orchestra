@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse, NoReverseMatch
+from django.urls import reverse, NoReverseMatch
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.http import HttpResponseRedirect
 from django.contrib.admin.utils import unquote
@@ -30,10 +30,10 @@ class LogEntryAdmin(admin.ModelAdmin):
     actions = None
     list_select_related = ('user', 'content_type')
     list_display_links = None
-    
+
     user_link = admin_link('user')
     display_action_time = admin_date('action_time', short_description=_("Time"))
-    
+
     def display_message(self, log):
         edit = '<a href="%(url)s"><img src="%(img)s"></img></a>' % {
             'url': reverse('admin:admin_logentry_change', args=(log.pk,)),
@@ -58,7 +58,7 @@ class LogEntryAdmin(admin.ModelAdmin):
     display_message.short_description = _("Message")
     display_message.admin_order_field = 'action_flag'
     display_message.allow_tags = True
-    
+
     def display_action(self, log):
         if log.is_addition():
             return _("Added")
@@ -67,7 +67,7 @@ class LogEntryAdmin(admin.ModelAdmin):
         return _("Deleted")
     display_action.short_description = _("Action")
     display_action.admin_order_field = 'action_flag'
-    
+
     def content_object_link(self, log):
         ct = log.content_type
         view = 'admin:%s_%s_change' % (ct.app_label, ct.model)
@@ -79,7 +79,7 @@ class LogEntryAdmin(admin.ModelAdmin):
     content_object_link.short_description = _("Content object")
     content_object_link.admin_order_field = 'object_repr'
     content_object_link.allow_tags = True
-    
+
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         """ Add rel_opts and object to context """
         if not add and 'edit' in request.GET.urlencode():
@@ -89,14 +89,14 @@ class LogEntryAdmin(admin.ModelAdmin):
             })
         return super(LogEntryAdmin, self).render_change_form(
             request, context, add, change, form_url, obj)
-    
+
     def response_change(self, request, obj):
         """ save and continue preserve edit query string """
         response = super(LogEntryAdmin, self).response_change(request, obj)
         if 'edit' in request.GET.urlencode() and 'edit' not in response.url:
             return HttpResponseRedirect(response.url + '?edit=True')
         return response
-    
+
     def response_post_save_change(self, request, obj):
         """ save redirect to object history """
         if 'edit' in request.GET.urlencode():
@@ -109,19 +109,19 @@ class LogEntryAdmin(admin.ModelAdmin):
             }, post_url)
             return HttpResponseRedirect(post_url)
         return super(LogEntryAdmin, self).response_post_save_change(request, obj)
-    
+
     def has_add_permission(self, *args, **kwargs):
         return False
-    
+
     def has_delete_permission(self, *args, **kwargs):
         return False
-    
+
     def log_addition(self, *args, **kwargs):
         pass
-    
+
     def log_change(self, *args, **kwargs):
         pass
-    
+
     def log_deletion(self, *args, **kwargs):
         pass
 

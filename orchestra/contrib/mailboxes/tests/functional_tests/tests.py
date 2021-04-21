@@ -11,7 +11,7 @@ from django.apps import apps
 from django.conf import settings as djsettings
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import CommandError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from selenium.webdriver.support.select import Select
 
 from orchestra.contrib.orchestration.models import Server, Route

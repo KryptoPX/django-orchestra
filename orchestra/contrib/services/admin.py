@@ -1,7 +1,7 @@
 from django import forms
 from django.conf.urls import url
 from django.contrib import admin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -42,7 +42,7 @@ class ServiceAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
     actions = (update_orders, clone, disable, enable)
     change_view_actions = actions + (view_help,)
     change_form_template = 'admin/services/service/change_form.html'
-    
+
     def get_urls(self):
         """Returns the additional urls for the change view links"""
         urls = super(ServiceAdmin, self).get_urls()
@@ -54,7 +54,7 @@ class ServiceAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
                 name='%s_%s_help' % (opts.app_label, opts.model_name)
             )
         ] + urls
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ Improve performance of account field and filter by account """
         if db_field.name == 'content_type':
@@ -64,7 +64,7 @@ class ServiceAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
         if db_field.name in ['match', 'metric', 'order_description']:
             kwargs['widget'] = forms.TextInput(attrs={'size':'160'})
         return super(ServiceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-    
+
     def num_orders(self, service):
         num = service.orders__count
         url = reverse('admin:orders_order_changelist')
@@ -73,7 +73,7 @@ class ServiceAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
     num_orders.short_description = _("Orders")
     num_orders.admin_order_field = 'orders__count'
     num_orders.allow_tags = True
-    
+
     def get_queryset(self, request):
         qs = super(ServiceAdmin, self).get_queryset(request)
         # Count active orders
@@ -88,7 +88,7 @@ class ServiceAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
             )
         })
         return qs
-    
+
     def help_view(self, request, *args):
         opts = self.model._meta
         context = {

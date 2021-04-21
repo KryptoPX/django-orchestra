@@ -1,5 +1,5 @@
 from django.contrib import admin, messages
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import transaction
 from django.utils import timezone
 from django.utils.safestring import mark_safe
@@ -17,7 +17,7 @@ class BillSelectedOrders(object):
     verbose_name = _("Bill")
     template = 'admin/orders/order/bill_selected_options.html'
     __name__ = 'bill_selected_orders'
-    
+
     def __call__(self, modeladmin, request, queryset):
         """ make this monster behave like a function """
         self.modeladmin = modeladmin
@@ -34,7 +34,7 @@ class BillSelectedOrders(object):
         del(self.queryset)
         del(self.context)
         return ret
-    
+
     def set_options(self, request):
         form = BillSelectedOptionsForm()
         if request.POST.get('step'):
@@ -56,7 +56,7 @@ class BillSelectedOrders(object):
             'form': form,
         })
         return render(request, self.template, self.context)
-    
+
     def select_related(self, request):
         # TODO use changelist ?
         related = self.queryset.get_related().select_related('account', 'service')
@@ -76,7 +76,7 @@ class BillSelectedOrders(object):
             'form': form,
         })
         return render(request, self.template, self.context)
-    
+
     @transaction.atomic
     def confirmation(self, request):
         form = BillSelectConfirmationForm(initial=self.options)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
@@ -28,7 +28,7 @@ class PlanAdmin(ExtendedModelAdmin):
     }
     change_readonly_fields = ('name',)
     inlines = [RateInline]
-    
+
     def num_contracts(self, plan):
         num = plan.contracts__count
         url = reverse('admin:plans_contractedplan_changelist')
@@ -37,7 +37,7 @@ class PlanAdmin(ExtendedModelAdmin):
     num_contracts.short_description = _("Contracts")
     num_contracts.admin_order_field = 'contracts__count'
     num_contracts.allow_tags = True
-    
+
     def get_queryset(self, request):
         qs = super(PlanAdmin, self).get_queryset(request)
         return qs.annotate(models.Count('contracts', distinct=True))
@@ -49,7 +49,7 @@ class ContractedPlanAdmin(AccountAdminMixin, admin.ModelAdmin):
     list_select_related = ('plan', 'account')
     search_fields = ('account__username', 'plan__name', 'id')
     actions = (list_accounts,)
-    
+
     plan_link = admin_link('plan')
 
 

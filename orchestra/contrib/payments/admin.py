@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 
@@ -48,20 +48,20 @@ class TransactionInline(admin.TabularInline):
         'amount', 'currency'
     )
     readonly_fields = fields
-    
+
     transaction_link = admin_link('__str__', short_description=_("ID"))
     bill_link = admin_link('bill')
     source_link = admin_link('source')
     display_state = admin_colored('state', colors=STATE_COLORS)
-    
+
     class Media:
         css = {
             'all': ('orchestra/css/hide-inline-id.css',)
         }
-    
+
     def has_add_permission(self, *args, **kwargs):
         return False
-    
+
     def get_queryset(self, *args, **kwargs):
         qs = super().get_queryset(*args, **kwargs)
         return qs.select_related('source', 'bill')
@@ -116,28 +116,28 @@ class TransactionAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
     )
     list_select_related = ('source', 'bill__account', 'process')
     date_hierarchy = 'created_at'
-    
+
     bill_link = admin_link('bill')
     source_link = admin_link('source')
     process_link = admin_link('process', short_description=_("proc"))
     account_link = admin_link('bill__account')
     display_created_at = admin_date('created_at', short_description=_("Created"))
     display_modified_at = admin_date('modified_at', short_description=_("Modified"))
-    
+
     def has_delete_permission(self, *args, **kwargs):
         return False
-    
+
     def get_actions(self, request):
         actions = super().get_actions(request)
         if 'delete_selected' in actions:
             del actions['delete_selected']
         return actions
-    
+
     def get_change_readonly_fields(self, request, obj):
         if obj.state in (Transaction.WAITTING_PROCESSING, Transaction.WAITTING_EXECUTION):
             return ()
         return ('amount', 'currency')
-    
+
     def get_change_view_actions(self, obj=None):
         actions = super(TransactionAdmin, self).get_change_view_actions()
         exclude = []
@@ -153,7 +153,7 @@ class TransactionAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
             elif obj.state == Transaction.SECURED:
                 return []
         return [action for action in actions if action.__name__ not in exclude]
-    
+
     def display_state(self, obj):
         state = admin_colored('state', colors=STATE_COLORS)(obj)
         help_text = obj.get_state_help()
@@ -178,16 +178,16 @@ class TransactionProcessAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
         actions.mark_process_as_executed, actions.abort, actions.commit, actions.report
     )
     actions = change_view_actions + (actions.delete_selected,)
-    
+
     display_state = admin_colored('state', colors=PROCESS_STATE_COLORS)
     display_created_at = admin_date('created_at', short_description=_("Created"))
-    
+
     def file_url(self, process):
         if process.file:
             return '<a href="%s">%s</a>' % (process.file.url, process.file.name)
     file_url.allow_tags = True
     file_url.admin_order_field = 'file'
-    
+
     def display_transactions(self, process):
         ids = []
         lines = []
@@ -208,10 +208,10 @@ class TransactionProcessAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
         return '<a href="%s">%s</a>' % (url, transactions)
     display_transactions.short_description = _("Transactions")
     display_transactions.allow_tags = True
-    
+
     def has_add_permission(self, *args, **kwargs):
         return False
-    
+
     def get_change_view_actions(self, obj=None):
         actions = super().get_change_view_actions()
         exclude = []
@@ -223,7 +223,7 @@ class TransactionProcessAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
             elif obj.state == TransactionProcess.ABORTED:
                 exclude = ['mark_process_as_executed', 'abort', 'commit']
         return [action for action in actions if action.__name__ not in exclude]
-    
+
     def delete_view(self, request, object_id, extra_context=None):
         queryset = self.model.objects.filter(id=object_id)
         related_transactions = helpers.pre_delete_processes(self, request, queryset)

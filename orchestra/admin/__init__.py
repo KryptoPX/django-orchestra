@@ -3,7 +3,7 @@ from collections import OrderedDict
 from functools import update_wrapper
 
 from django.contrib import admin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -56,7 +56,7 @@ def search(request):
         if service.search:
             models.add(service.model)
             model_name_map[service.model._meta.model_name] = service.model
-    
+
     # Account direct access
     if search_term.endswith('!'):
         from ..contrib.accounts.models import Account

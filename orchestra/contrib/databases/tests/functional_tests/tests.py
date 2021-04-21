@@ -6,7 +6,7 @@ import unittest
 import MySQLdb
 from django.conf import settings as djsettings
 from django.core.management.base import CommandError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from orchestra.admin.utils import change_url
 from orchestra.contrib.orchestration.models import Route, Server
 from orchestra.utils.sys import sshrun

@@ -2,7 +2,7 @@ import textwrap
 
 from django.contrib import messages
 from django.core.mail import mail_admins
-from django.core.urlresolvers import reverse, NoReverseMatch
+from django.urls import reverse, NoReverseMatch
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import ungettext, ugettext_lazy as _

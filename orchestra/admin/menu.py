@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 from admin_tools.menu import items, Menu
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.text import capfirst
 from django.utils.translation import ugettext_lazy as _
 
@@ -16,7 +16,7 @@ def api_link(context):
         opts = context['cl'].opts
     else:
         return reverse('api-root')
-    if 'object_id' in context: 
+    if 'object_id' in context:
         object_id = context['object_id']
         try:
             return reverse('%s-detail' % opts.model_name, args=[object_id])
@@ -42,7 +42,7 @@ def process_registry(register):
         item = items.MenuItem(name, url)
         item.options = options
         return item
-    
+
     childrens = {}
     for model, options in register.get().items():
         if options.get('menu', True):
@@ -68,7 +68,7 @@ def process_registry(register):
 
 class OrchestraMenu(Menu):
     template = 'admin/orchestra/menu.html'
-    
+
     def init_with_context(self, context):
         self.children = [
 #            items.MenuItem(

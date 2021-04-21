@@ -8,7 +8,7 @@ from django.conf.urls import url
 from django.contrib import admin, messages
 from django.contrib.admin.utils import unquote
 from django.contrib.auth import admin as auth
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.templatetags.static import static
 from django.utils.safestring import mark_safe
@@ -71,15 +71,15 @@ class AccountAdmin(ChangePasswordAdminMixin, auth.UserAdmin, ExtendedModelAdmin)
     )
     change_view_actions = (disable_selected, service_report, enable_selected)
     ordering = ()
-    
+
     main_systemuser_link = admin_link('main_systemuser')
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ Make value input widget bigger """
         if db_field.name == 'comments':
             kwargs['widget'] = forms.Textarea(attrs={'cols': 70, 'rows': 4})
         return super(AccountAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-    
+
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         if not add:
             if request.method == 'GET' and not obj.is_active:
@@ -96,7 +96,7 @@ class AccountAdmin(ChangePasswordAdminMixin, auth.UserAdmin, ExtendedModelAdmin)
             })
         return super(AccountAdmin, self).render_change_form(
             request, context, add, change, form_url, obj)
-    
+
     def get_fieldsets(self, request, obj=None):
         fieldsets = super(AccountAdmin, self).get_fieldsets(request, obj)
         if not obj:
@@ -106,7 +106,7 @@ class AccountAdmin(ChangePasswordAdminMixin, auth.UserAdmin, ExtendedModelAdmin)
                 fieldsets = list(fieldsets)
                 fieldsets.insert(1, (_("Related services"), {'fields': fields}))
         return fieldsets
-    
+
     def save_model(self, request, obj, form, change):
         if not change:
             form.save_model(obj)
@@ -133,7 +133,7 @@ class AccountAdmin(ChangePasswordAdminMixin, auth.UserAdmin, ExtendedModelAdmin)
                     if msg:
                         messages.warning(request, mark_safe(msg % context))
             super(AccountAdmin, self).save_model(request, obj, form, change)
-    
+
     def get_change_view_actions(self, obj=None):
         views = super().get_change_view_actions(obj=obj)
         if obj is not None:
@@ -141,7 +141,7 @@ class AccountAdmin(ChangePasswordAdminMixin, auth.UserAdmin, ExtendedModelAdmin)
                 return [view for view in views if view.url_name != 'enable']
             return [view for view in views if view.url_name != 'disable']
         return views
-    
+
     def get_actions(self, request):
         actions = super().get_actions(request)
         if 'delete_selected' in actions:
@@ -157,7 +157,7 @@ class AccountListAdmin(AccountAdmin):
     list_display = ('select_account', 'username', 'type', 'username')
     actions = None
     change_list_template = 'admin/accounts/account/select_account_list.html'
-    
+
     def select_account(self, instance):
         # TODO get query string from request.META['QUERY_STRING'] to preserve filters
         context = {
@@ -169,7 +169,7 @@ class AccountListAdmin(AccountAdmin):
     select_account.short_description = _("account")
     select_account.allow_tags = True
     select_account.admin_order_field = 'username'
-    
+
     def changelist_view(self, request, extra_context=None):
         app_label = request.META['PATH_INFO'].split('/')[-5]
         model = request.META['PATH_INFO'].split('/')[-4]
@@ -206,7 +206,7 @@ class AccountAdminMixin(object):
     change_form_template = 'admin/accounts/account/change_form.html'
     account = None
     list_select_related = ('account',)
-    
+
     def display_active(self, instance):
         if not instance.is_active:
             return '<img src="%s" alt="False">' % static('admin/img/icon-no.svg')
@@ -217,14 +217,14 @@ class AccountAdminMixin(object):
     display_active.short_description = _("active")
     display_active.allow_tags = True
     display_active.admin_order_field = 'is_active'
-    
+
     def account_link(self, instance):
         account = instance.account if instance.pk else self.account
         return admin_link()(account)
     account_link.short_description = _("account")
     account_link.allow_tags = True
     account_link.admin_order_field = 'account__username'
-    
+
     def get_form(self, request, obj=None, **kwargs):
         """ Warns user when object's account is disabled """
         form = super(AccountAdminMixin, self).get_form(request, obj, **kwargs)
@@ -247,7 +247,7 @@ class AccountAdminMixin(object):
         # Not available in POST
         form.initial_account = self.get_changeform_initial_data(request).get('account')
         return form
-    
+
     def get_fields(self, request, obj=None):
         """ remove account or account_link depending on the case """
         fields = super(AccountAdminMixin, self).get_fields(request, obj)
@@ -263,13 +263,13 @@ class AccountAdminMixin(object):
             except ValueError:
                 pass
         return fields
-    
+
     def get_readonly_fields(self, request, obj=None):
         """ provide account for filter_by_account_fields """
         if obj:
             self.account = obj.account
         return super(AccountAdminMixin, self).get_readonly_fields(request, obj)
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ Filter by account """
         formfield = super(AccountAdminMixin, self).formfield_for_dbfield(db_field, **kwargs)
@@ -277,14 +277,14 @@ class AccountAdminMixin(object):
             if self.account:
                 # Hack widget render in order to append ?account=id to the add url
                 old_render = formfield.widget.render
-                
+
                 def render(*args, **kwargs):
                     output = old_render(*args, **kwargs)
                     output = output.replace('/add/"', '/add/?account=%s"' % self.account.pk)
                     with_qargs = r'/add/?\1&account=%s"' % self.account.pk
                     output = re.sub(r'/add/\?([^".]*)"', with_qargs, output)
                     return mark_safe(output)
-                
+
                 formfield.widget.render = render
                 # Filter related object by account
                 formfield.queryset = formfield.queryset.filter(account=self.account)
@@ -302,21 +302,21 @@ class AccountAdminMixin(object):
                 formfield.initial = 1
             formfield.queryset = formfield.queryset.order_by('username')
         return formfield
-    
+
     def get_formset(self, request, obj=None, **kwargs):
         """ provides form.account for convinience """
         formset = super(AccountAdminMixin, self).get_formset(request, obj, **kwargs)
         formset.form.account = self.account
         formset.account = self.account
         return formset
-    
+
     def get_account_from_preserve_filters(self, request):
         preserved_filters = self.get_preserved_filters(request)
         preserved_filters = dict(parse_qsl(preserved_filters))
         cl_filters = preserved_filters.get('_changelist_filters')
         if cl_filters:
             return dict(parse_qsl(cl_filters)).get('account')
-    
+
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         account_id = self.get_account_from_preserve_filters(request)
         if not object_id:
@@ -331,7 +331,7 @@ class AccountAdminMixin(object):
         context.update(extra_context or {})
         return super(AccountAdminMixin, self).changeform_view(
             request, object_id, form_url=form_url, extra_context=context)
-    
+
     def changelist_view(self, request, extra_context=None):
         account_id = request.GET.get('account')
         context = {}
@@ -367,7 +367,7 @@ class SelectAccountAdminMixin(AccountAdminMixin):
             account = Account.objects.get(pk=request.GET['account'])
         [setattr(inline, 'account', account) for inline in inlines]
         return inlines
-    
+
     def get_urls(self):
         """ Hooks select account url """
         urls = super(AccountAdminMixin, self).get_urls()
@@ -381,7 +381,7 @@ class SelectAccountAdminMixin(AccountAdminMixin):
                 name='%s_%s_select_account' % info),
         ]
         return select_urls + urls
-    
+
     def add_view(self, request, form_url='', extra_context=None):
         """ Redirects to select account view if required """
         if request.user.is_superuser:
@@ -406,7 +406,7 @@ class SelectAccountAdminMixin(AccountAdminMixin):
                 return super(AccountAdminMixin, self).add_view(
                     request, form_url=form_url, extra_context=context)
         return HttpResponseRedirect('./select-account/?%s' % request.META['QUERY_STRING'])
-    
+
     def save_model(self, request, obj, form, change):
         """
         Given a model instance save it to the database.

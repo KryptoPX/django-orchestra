@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 import requests
 from django.conf import settings as djsettings
 from django.core.management.base import CommandError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from orchestra.admin.utils import change_url
 from orchestra.contrib.domains.models import Domain
 from orchestra.contrib.orchestration.models import Route, Server

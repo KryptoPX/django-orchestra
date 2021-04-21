@@ -6,7 +6,7 @@ from functools import wraps
 from django.conf import settings
 from django.contrib import admin
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.urlresolvers import reverse, NoReverseMatch
+from django.urls import reverse, NoReverseMatch
 from django.db import models
 from django.shortcuts import redirect
 from django.utils import timezone

@@ -5,7 +5,7 @@ from functools import wraps
 from django.conf import settings
 from django.contrib.auth import BACKEND_SESSION_KEY, SESSION_KEY
 from django.contrib.sessions.backends.db import SessionStore
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import LiveServerTestCase, TestCase
 from selenium.webdriver.firefox.webdriver import WebDriver
 from xvfbwrapper import Xvfb

@@ -1,7 +1,7 @@
 from django import forms
 from django.conf.urls import url
 from django.contrib import admin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -21,14 +21,14 @@ from .helpers import get_ticket_changes, markdown_formated_changes, filter_actio
 from .models import Ticket, Queue, Message
 
 
-PRIORITY_COLORS = { 
+PRIORITY_COLORS = {
     Ticket.HIGH: 'red',
     Ticket.MEDIUM: 'darkorange',
     Ticket.LOW: 'green',
 }
 
 
-STATE_COLORS = { 
+STATE_COLORS = {
     Ticket.NEW: 'grey',
     Ticket.IN_PROGRESS: 'darkorange',
     Ticket.FEEDBACK: 'purple',
@@ -44,12 +44,12 @@ class MessageReadOnlyInline(admin.TabularInline):
     can_delete = False
     fields = ('content_html',)
     readonly_fields = ('content_html',)
-    
+
     class Media:
         css = {
             'all': ('orchestra/css/hide-inline-id.css',)
         }
-    
+
     def content_html(self, msg):
         context = {
             'number': msg.number,
@@ -64,10 +64,10 @@ class MessageReadOnlyInline(admin.TabularInline):
         return header + content
     content_html.short_description = _("Content")
     content_html.allow_tags = True
-    
+
     def has_add_permission(self, request):
         return False
-    
+
     def has_delete_permission(self, request, obj=None):
         return False
 
@@ -79,12 +79,12 @@ class MessageInline(admin.TabularInline):
     form = MessageInlineForm
     can_delete = False
     fields = ('content',)
-    
+
     def get_formset(self, request, obj=None, **kwargs):
         """ hook request.user on the inline form """
         self.form.user = request.user
         return super(MessageInline, self).get_formset(request, obj, **kwargs)
-    
+
     def get_queryset(self, request):
         """ Don't show any message """
         qs = super(MessageInline, self).get_queryset(request)
@@ -103,14 +103,14 @@ class TicketInline(admin.TabularInline):
     model = Ticket
     extra = 0
     max_num = 0
-    
+
     creator_link = admin_link('creator')
     owner_link = admin_link('owner')
     created = admin_link('created_at')
     updated = admin_link('updated_at')
     colored_state = admin_colored('state', colors=STATE_COLORS, bold=False)
     colored_priority = admin_colored('priority', colors=PRIORITY_COLORS, bold=False)
-    
+
     def ticket_id(self, instance):
         return '<b>%s</b>' % admin_link()(instance)
     ticket_id.short_description = '#'
@@ -176,7 +176,7 @@ class TicketAdmin(ExtendedModelAdmin):
         }),
     )
     list_select_related = ('queue', 'owner', 'creator')
-    
+
     class Media:
         css = {
             'all': ('issues/css/ticket-admin.css',)
@@ -184,14 +184,14 @@ class TicketAdmin(ExtendedModelAdmin):
         js = (
             'issues/js/ticket-admin.js',
         )
-    
+
     display_creator = admin_link('creator')
     display_queue = admin_link('queue')
     display_owner = admin_link('owner')
     updated = admin_date('updated_at')
     display_state = admin_colored('state', colors=STATE_COLORS, bold=False)
     display_priority = admin_colored('priority', colors=PRIORITY_COLORS, bold=False)
-    
+
     def display_summary(self, ticket):
         context = {
             'creator': admin_link('creator')(self, ticket) if ticket.creator else ticket.creator_name,
@@ -208,7 +208,7 @@ class TicketAdmin(ExtendedModelAdmin):
         return '<h4>Added by %(creator)s about %(created)s%(updated)s</h4>' % context
     display_summary.short_description = 'Summary'
     display_summary.allow_tags = True
-    
+
     def unbold_id(self, ticket):
         """ Unbold id if ticket is read """
         if ticket.is_read_by(self.user):
@@ -217,7 +217,7 @@ class TicketAdmin(ExtendedModelAdmin):
     unbold_id.allow_tags = True
     unbold_id.short_description = "#"
     unbold_id.admin_order_field = 'id'
-    
+
     def bold_subject(self, ticket):
         """ Bold subject when tickets are unread for request.user """
         if ticket.is_read_by(self.user):
@@ -226,31 +226,31 @@ class TicketAdmin(ExtendedModelAdmin):
     bold_subject.allow_tags = True
     bold_subject.short_description = _("Subject")
     bold_subject.admin_order_field = 'subject'
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ Make value input widget bigger """
         if db_field.name == 'subject':
             kwargs['widget'] = forms.TextInput(attrs={'size':'120'})
         return super(TicketAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-    
+
     def save_model(self, request, obj, *args, **kwargs):
         """ Define creator for new tickets """
         if not obj.pk:
             obj.creator = request.user
         super(TicketAdmin, self).save_model(request, obj, *args, **kwargs)
         obj.mark_as_read_by(request.user)
-    
+
     def get_urls(self):
         """ add markdown preview url """
         return [
             url(r'^preview/$',
                 wrap_admin_view(self, self.message_preview_view))
         ] + super(TicketAdmin, self).get_urls()
-    
+
     def add_view(self, request, form_url='', extra_context=None):
         """ Do not sow message inlines """
         return super(TicketAdmin, self).add_view(request, form_url, extra_context)
-    
+
     def change_view(self, request, object_id, form_url='', extra_context=None):
         """ Change view actions based on ticket state """
         ticket = get_object_or_404(Ticket, pk=object_id)
@@ -269,12 +269,12 @@ class TicketAdmin(ExtendedModelAdmin):
         context.update(extra_context or {})
         return super(TicketAdmin, self).change_view(request, object_id, form_url=form_url,
             extra_context=context)
-    
+
     def changelist_view(self, request, extra_context=None):
         # Hook user for bold_subject
         self.user = request.user
         return super(TicketAdmin,self).changelist_view(request, extra_context=extra_context)
-    
+
     def message_preview_view(self, request):
         """ markdown preview render via ajax """
         data = request.POST.get("data")
@@ -287,12 +287,12 @@ class QueueAdmin(admin.ModelAdmin):
     actions = (set_default_queue,)
     inlines = (TicketInline,)
     ordering = ('name',)
-    
+
     class Media:
         css = {
             'all': ('orchestra/css/hide-inline-id.css',)
         }
-    
+
     def num_tickets(self, queue):
         num = queue.tickets__count
         url = reverse('admin:issues_ticket_changelist')
@@ -301,7 +301,7 @@ class QueueAdmin(admin.ModelAdmin):
     num_tickets.short_description = _("Tickets")
     num_tickets.admin_order_field = 'tickets__count'
     num_tickets.allow_tags = True
-    
+
     def get_list_display(self, request):
         """ show notifications """
         list_display = list(self.list_display)
@@ -312,7 +312,7 @@ class QueueAdmin(admin.ModelAdmin):
             display_notify.boolean = True
             list_display.append(display_notify)
         return list_display
-    
+
     def get_queryset(self, request):
         qs = super(QueueAdmin, self).get_queryset(request)
         qs = qs.annotate(models.Count('tickets'))
