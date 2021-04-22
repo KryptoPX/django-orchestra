@@ -42,7 +42,7 @@ class Resource(models.Model):
                     "digits and hyphen only."),
         validators=[validators.validate_name])
     verbose_name = models.CharField(_("verbose name"), max_length=256)
-    content_type = models.ForeignKey(ContentType,
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
         help_text=_("Model where this resource will be hooked."))
     aggregation = models.CharField(_("aggregation"), max_length=16,
         choices=Aggregation.get_choices(), default=Aggregation.get_choices()[0][0],
@@ -178,8 +178,8 @@ class ResourceDataQuerySet(models.QuerySet):
 
 class ResourceData(models.Model):
     """ Stores computed resource usage and allocation """
-    resource = models.ForeignKey(Resource, related_name='dataset', verbose_name=_("resource"))
-    content_type = models.ForeignKey(ContentType, verbose_name=_("content type"))
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name='dataset', verbose_name=_("resource"))
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name=_("content type"))
     object_id = models.PositiveIntegerField(_("object id"))
     used = models.DecimalField(_("used"), max_digits=16, decimal_places=3, null=True,
         editable=False)
@@ -267,7 +267,7 @@ class MonitorData(models.Model):
     """ Stores monitored data """
     monitor = models.CharField(_("monitor"), max_length=256, db_index=True,
         choices=ServiceMonitor.get_choices())
-    content_type = models.ForeignKey(ContentType, verbose_name=_("content type"))
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name=_("content type"))
     object_id = models.PositiveIntegerField(_("object id"))
     created_at = models.DateTimeField(_("created"), default=timezone.now, db_index=True)
     value = models.DecimalField(_("value"), max_digits=16, decimal_places=2)

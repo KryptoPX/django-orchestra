@@ -29,7 +29,7 @@ class Account(auth.AbstractBaseUser):
             validators.RegexValidator(r'^[\w.-]+$', _("Enter a valid username."), 'invalid')
         ])
     main_systemuser = models.ForeignKey(settings.ACCOUNTS_SYSTEMUSER_MODEL, null=True,
-        related_name='accounts_main', editable=False)
+        related_name='accounts_main', editable=False, on_delete=models.SET_NULL)
     short_name = models.CharField(_("short name"), max_length=64, blank=True)
     full_name = models.CharField(_("full name"), max_length=256)
     email = models.EmailField(_('email address'), help_text=_("Used for password recovery"))

@@ -29,11 +29,11 @@ class Contact(models.Model):
         ('ADDS', _("Announcements")),
         ('EMERGENCY', _("Emergency contact")),
     )
-    
+
     objects = ContactQuerySet.as_manager()
-    
+
     account = models.ForeignKey('accounts.Account', verbose_name=_("Account"),
-        related_name='contacts', null=True)
+        related_name='contacts', null=True, on_delete=models.SET_NULL)
     short_name = models.CharField(_("short name"), max_length=128)
     full_name = models.CharField(_("full name"), max_length=256, blank=True)
     email = models.EmailField()
@@ -54,10 +54,10 @@ class Contact(models.Model):
     country = models.CharField(_("country"), max_length=20, blank=True,
         choices=settings.CONTACTS_COUNTRIES,
         default=settings.CONTACTS_DEFAULT_COUNTRY)
-    
+
     def __str__(self):
         return self.full_name or self.short_name
-    
+
     def clean(self):
         self.short_name = self.short_name.strip()
         self.full_name = self.full_name.strip()

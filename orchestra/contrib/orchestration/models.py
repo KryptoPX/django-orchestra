@@ -90,7 +90,7 @@ class BackendLog(models.Model):
 
     backend = models.CharField(_("backend"), max_length=256)
     state = models.CharField(_("state"), max_length=16, choices=STATES, default=RECEIVED)
-    server = models.ForeignKey(Server, verbose_name=_("server"), related_name='execution_logs')
+    server = models.ForeignKey(Server, verbose_name=_("server"), related_name='execution_logs', on_delete=models.CASCADE)
     script = models.TextField(_("script"))
     stdout = models.TextField(_("stdout"))
     stderr = models.TextField(_("stderr"))
@@ -135,10 +135,10 @@ class BackendOperation(models.Model):
     """
     Encapsulates an operation, storing its related object, the action and the backend.
     """
-    log = models.ForeignKey('orchestration.BackendLog', related_name='operations')
+    log = models.ForeignKey('orchestration.BackendLog', related_name='operations', on_delete=models.CASCADE)
     backend = models.CharField(_("backend"), max_length=256)
     action = models.CharField(_("action"), max_length=64)
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True)
     instance_repr = models.CharField(_("instance representation"), max_length=256)
 
@@ -199,7 +199,7 @@ class Route(models.Model):
     """
     backend = models.CharField(_("backend"), max_length=256,
         choices=ServiceBackend.get_choices())
-    host = models.ForeignKey(Server, verbose_name=_("host"), related_name='routes')
+    host = models.ForeignKey(Server, verbose_name=_("host"), related_name='routes', on_delete=models.CASCADE)
     match = models.CharField(_("match"), max_length=256, blank=True, default='True',
         help_text=_("Python expression used for selecting the targe host, "
                     "<em>instance</em> referes to the current object."))

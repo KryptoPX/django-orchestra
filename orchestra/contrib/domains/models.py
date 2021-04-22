@@ -31,9 +31,9 @@ class Domain(models.Model):
             validators.validate_allowed_domain
         ])
     account = models.ForeignKey('accounts.Account', verbose_name=_("Account"), blank=True,
-        related_name='domains', help_text=_("Automatically selected for subdomains."))
+        related_name='domains', on_delete=models.CASCADE, help_text=_("Automatically selected for subdomains."))
     top = models.ForeignKey('domains.Domain', null=True, related_name='subdomain_set',
-        editable=False, verbose_name=_("top domain"))
+        editable=False, verbose_name=_("top domain"), on_delete=models.CASCADE)
     serial = models.IntegerField(_("serial"), default=utils.generate_zone_serial, editable=False,
         help_text=_("A revision number that changes whenever this domain is updated."))
     refresh = models.CharField(_("refresh"), max_length=16, blank=True,
@@ -69,16 +69,16 @@ class Domain(models.Model):
         blank=True,
         help_text="A bind-9 'address_match_list' that will be granted permission to perform "
                   "dns2136 updates. Chiefly used to enable Let's Encrypt self-service validation.")
-    
+
     objects = DomainQuerySet.as_manager()
-    
+
     def __str__(self):
         return self.name
-    
+
     @property
     def origin(self):
         return self.top or self
-    
+
     @property
     def is_top(self):
         # don't cache, don't replace by top_id
@@ -86,14 +86,14 @@ class Domain(models.Model):
             return not bool(self.top)
         except Domain.DoesNotExist:
             return False
-    
+
     @property
     def subdomains(self):
         return Domain.objects.filter(name__regex='\.%s$' % self.name)
-    
+
     def clean(self):
         self.name = self.name.lower()
-    
+
     def save(self, *args, **kwargs):
         """ create top relation """
         update = False
@@ -110,7 +110,7 @@ class Domain(models.Model):
                 # queryset.update() is not used because we want to trigger backend to delete ex-topdomains
                 domain.top = self
                 domain.save(update_fields=('top',))
-    
+
     def get_description(self):
         if self.is_top:
             num = self.subdomains.count()
@@ -119,21 +119,21 @@ class Domain(models.Model):
                 _("top domain with %d subdomains") % num,
                 num)
         return _("subdomain")
-    
+
     def get_absolute_url(self):
         return 'http://%s' % self.name
-    
+
     def get_declared_records(self):
         """ proxy method, needed for input validation, see helpers.domain_for_validation """
         return self.records.all()
-    
+
     def get_subdomains(self):
         """ proxy method, needed for input validation, see helpers.domain_for_validation """
         return self.origin.subdomain_set.all().prefetch_related('records')
-    
+
     def get_parent(self, top=False):
         return type(self).objects.get_parent(self.name, top=top)
-    
+
     def render_zone(self):
         origin = self.origin
         zone = origin.render_records()
@@ -147,7 +147,7 @@ class Domain(models.Model):
         for subdomain in sorted(tail, key=lambda x: len(x.name), reverse=True):
             zone += subdomain.render_records()
         return zone.strip()
-    
+
     def refresh_serial(self):
         """ Increases the domain serial number by one """
         serial = utils.generate_zone_serial()
@@ -159,7 +159,7 @@ class Domain(models.Model):
             serial = int(serial)
         self.serial = serial
         self.save(update_fields=('serial',))
-    
+
     def get_default_soa(self):
         return ' '.join([
             "%s." % settings.DOMAINS_DEFAULT_NAME_SERVER,
@@ -170,7 +170,7 @@ class Domain(models.Model):
             self.expire or settings.DOMAINS_DEFAULT_EXPIRE,
             self.min_ttl or settings.DOMAINS_DEFAULT_MIN_TTL,
         ])
-    
+
     def get_default_records(self):
         defaults = []
         if self.is_top:
@@ -202,7 +202,7 @@ class Domain(models.Model):
                 value=default_aaaa
             ))
         return defaults
-    
+
     def record_is_implicit(self, record, types):
         if record.type not in types:
             if record.type is Record.NS:
@@ -221,7 +221,7 @@ class Domain(models.Model):
                     elif not has_a and not has_aaaa:
                         return True
         return False
-    
+
     def get_records(self):
         types = set()
         records = utils.RecordStorage()
@@ -249,7 +249,7 @@ class Domain(models.Model):
                 else:
                     records.append(record)
         return records
-    
+
     def render_records(self):
         result = ''
         for record in self.get_records():
@@ -273,7 +273,7 @@ class Domain(models.Model):
                 value=record.value
             )
         return result
-    
+
     def has_default_mx(self):
         records = self.get_records()
         for record in records.by_type('MX'):
@@ -294,7 +294,7 @@ class Record(models.Model):
     TXT = 'TXT'
     SPF = 'SPF'
     SOA = 'SOA'
-    
+
     TYPE_CHOICES = (
         (MX, "MX"),
         (NS, "NS"),
@@ -305,7 +305,7 @@ class Record(models.Model):
         (TXT, "TXT"),
         (SPF, "SPF"),
     )
-    
+
     VALIDATORS = {
         MX: (validators.validate_mx_record,),
         NS: (validators.validate_zone_label,),
@@ -317,8 +317,8 @@ class Record(models.Model):
         SRV: (validators.validate_srv_record,),
         SOA: (validators.validate_soa_record,),
     }
-    
-    domain = models.ForeignKey(Domain, verbose_name=_("domain"), related_name='records')
+
+    domain = models.ForeignKey(Domain, verbose_name=_("domain"), related_name='records', on_delete=models.CASCADE)
     ttl = models.CharField(_("TTL"), max_length=8, blank=True,
         help_text=_("Record TTL, defaults to %s") % settings.DOMAINS_DEFAULT_TTL,
         validators=[validators.validate_zone_interval])
@@ -326,10 +326,10 @@ class Record(models.Model):
     # max_length bumped from 256 to 1024 (arbitrary) on August 2019.
     value = models.CharField(_("value"), max_length=1024,
         help_text=_("MX, NS and CNAME records sould end with a dot."))
-    
+
     def __str__(self):
         return "%s %s IN %s %s" % (self.domain, self.get_ttl(), self.type, self.value)
-    
+
     def clean(self):
         """ validates record value based on its type """
         # validate value
@@ -343,6 +343,6 @@ class Record(models.Model):
                     raise ValidationError({
                         'value': error,
                     })
-    
+
     def get_ttl(self):
         return self.ttl or settings.DOMAINS_DEFAULT_TTL

@@ -24,7 +24,7 @@ from . import settings
 
 class BillContact(models.Model):
     account = models.OneToOneField('accounts.Account', verbose_name=_("account"),
-        related_name='billcontact')
+        related_name='billcontact', on_delete=models.CASCADE)
     name = models.CharField(_("name"), max_length=256, blank=True,
         help_text=_("Account full name will be used when left blank."))
     address = models.TextField(_("address"))
@@ -102,9 +102,9 @@ class Bill(models.Model):
 
     number = models.CharField(_("number"), max_length=16, unique=True, blank=True)
     account = models.ForeignKey('accounts.Account', verbose_name=_("account"),
-        related_name='%(class)s')
+        related_name='%(class)s', on_delete=models.CASCADE)
     amend_of = models.ForeignKey('self', null=True, blank=True, verbose_name=_("amend of"),
-        related_name='amends')
+        related_name='amends', on_delete=models.SET_NULL)
     type = models.CharField(_("type"), max_length=16, choices=TYPES)
     created_on = models.DateField(_("created on"), auto_now_add=True)
     closed_on = models.DateField(_("closed on"), blank=True, null=True, db_index=True)
@@ -416,7 +416,7 @@ class ProForma(Bill):
 
 class BillLine(models.Model):
     """ Base model for bill item representation """
-    bill = models.ForeignKey(Bill, verbose_name=_("bill"), related_name='lines')
+    bill = models.ForeignKey(Bill, verbose_name=_("bill"), related_name='lines', on_delete=models.CASCADE)
     description = models.CharField(_("description"), max_length=256)
     rate = models.DecimalField(_("rate"), blank=True, null=True, max_digits=12, decimal_places=2)
     quantity = models.DecimalField(_("quantity"), blank=True, null=True, max_digits=12,
@@ -434,7 +434,7 @@ class BillLine(models.Model):
     created_on = models.DateField(_("created"), auto_now_add=True)
     # Amendment
     amended_line = models.ForeignKey('self', verbose_name=_("amended line"),
-        related_name='amendment_lines', null=True, blank=True)
+        related_name='amendment_lines', null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         get_latest_by = 'id'
@@ -495,7 +495,7 @@ class BillSubline(models.Model):
     )
 
     # TODO: order info for undoing
-    line = models.ForeignKey(BillLine, verbose_name=_("bill line"), related_name='sublines')
+    line = models.ForeignKey(BillLine, verbose_name=_("bill line"), related_name='sublines', on_delete=models.CASCADE)
     description = models.CharField(_("description"), max_length=256)
     total = models.DecimalField(max_digits=12, decimal_places=2)
     type = models.CharField(_("type"), max_length=16, choices=TYPES, default=OTHER)
