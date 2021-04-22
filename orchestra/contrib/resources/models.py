@@ -342,7 +342,7 @@ def create_resource_relation():
             pass
         else:
             related._meta.private_fields = [
-                field for field in related._meta.private_fields if field.rel.to != ResourceData
+                field for field in related._meta.private_fields if field.remote_field.model != ResourceData
             ]
 
     for ct, resources in Resource.objects.group_by('content_type').items():

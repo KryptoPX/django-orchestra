@@ -11,5 +11,4 @@ class VirtualDatabaseRelation(GenericRelation):
                 pks.append(obj.database_id)
         if not pks:
             return []
-        # TODO renamed to self.remote_field in django 1.8
-        return self.rel.to._base_manager.db_manager(using).filter(pk__in=pks)
+        return self.remote_field.model._base_manager.db_manager(using).filter(pk__in=pks)

@@ -59,7 +59,7 @@ class ServiceAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
         """ Improve performance of account field and filter by account """
         if db_field.name == 'content_type':
             models = [model._meta.model_name for model in services.get()]
-            queryset = db_field.rel.to.objects
+            queryset = db_field.remote_field.model.objects
             kwargs['queryset'] = queryset.filter(model__in=models)
         if db_field.name in ['match', 'metric', 'order_description']:
             kwargs['widget'] = forms.TextInput(attrs={'size':'160'})

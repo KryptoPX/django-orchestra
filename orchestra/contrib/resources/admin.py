@@ -98,7 +98,7 @@ class ResourceAdmin(ExtendedModelAdmin):
         """ filter service content_types """
         if db_field.name == 'content_type':
             models = [ model._meta.model_name for model in services.get() ]
-            kwargs['queryset'] = db_field.rel.to.objects.filter(model__in=models)
+            kwargs['queryset'] = db_field.remote_field.model.objects.filter(model__in=models)
         return super(ResourceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
 
 
