@@ -11,7 +11,7 @@ class APIRoot(views.APIView):
         'ORCHESTRA_SITE_NAME',
         'ORCHESTRA_SITE_VERBOSE_NAME'
     )
-    
+
     def get(self, request, format=None):
         root_url = reverse('api-root', request=request, format=format)
         token_url = reverse('api-token-auth', request=request, format=format)
@@ -23,7 +23,7 @@ class APIRoot(views.APIView):
             'accountancy': {},
             'services': {},
         }
-        if not request.user.is_anonymous():
+        if not request.user.is_anonymous:
             list_name = '{basename}-list'
             detail_name = '{basename}-detail'
             for prefix, viewset, basename in self.router.registry:
@@ -60,7 +60,7 @@ class APIRoot(views.APIView):
                 for name in self.names
         })
         return Response(body, headers=headers)
-    
+
     def options(self, request):
         metadata = super(APIRoot, self).options(request)
         metadata.data['settings'] = {
