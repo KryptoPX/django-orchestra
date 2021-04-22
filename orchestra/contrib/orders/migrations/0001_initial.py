@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import models, migrations
 import django.utils.timezone
+import django.db.models.deletion
 from django.conf import settings
 
 
@@ -38,9 +39,9 @@ class Migration(migrations.Migration):
                 ('billed_until', models.DateField(blank=True, verbose_name='billed until', null=True)),
                 ('ignore', models.BooleanField(default=False, verbose_name='ignore')),
                 ('description', models.TextField(blank=True, verbose_name='description')),
-                ('account', models.ForeignKey(verbose_name='account', related_name='orders', to=settings.AUTH_USER_MODEL)),
-                ('content_type', models.ForeignKey(to='contenttypes.ContentType')),
-                ('service', models.ForeignKey(verbose_name='service', related_name='orders', to='services.Service')),
+                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, verbose_name='account', related_name='orders', to=settings.AUTH_USER_MODEL)),
+                ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType')),
+                ('service', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, verbose_name='service', related_name='orders', to='services.Service')),
             ],
             options={
                 'get_latest_by': 'id',
@@ -49,6 +50,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='metricstorage',
             name='order',
-            field=models.ForeignKey(verbose_name='order', related_name='metrics', to='orders.Order'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, verbose_name='order', related_name='metrics', to='orders.Order'),
         ),
     ]

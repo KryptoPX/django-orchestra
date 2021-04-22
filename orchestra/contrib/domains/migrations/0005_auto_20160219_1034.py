@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
+import django.db.models.deletion
 import orchestra.contrib.domains.validators
 
 
@@ -20,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='domain',
             name='top',
-            field=models.ForeignKey(editable=False, verbose_name='top domain', related_name='subdomain_set', to='domains.Domain', null=True),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, editable=False, verbose_name='top domain', related_name='subdomain_set', to='domains.Domain', null=True),
         ),
         migrations.AlterField(
             model_name='record',

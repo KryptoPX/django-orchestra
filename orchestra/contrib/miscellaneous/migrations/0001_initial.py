@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import django.db.models.deletion
 import orchestra.core.validators
 from django.conf import settings
 import orchestra.models.fields
@@ -22,7 +23,7 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(blank=True, verbose_name='description')),
                 ('amount', models.PositiveIntegerField(default=1, verbose_name='amount')),
                 ('is_active', models.BooleanField(default=True, help_text='Designates whether this service should be treated as active. Unselect this instead of deleting services.', verbose_name='active')),
-                ('account', models.ForeignKey(related_name='miscellaneous', verbose_name='account', to=settings.AUTH_USER_MODEL)),
+                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='miscellaneous', verbose_name='account', to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name_plural': 'miscellaneous',
@@ -43,6 +44,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='miscellaneous',
             name='service',
-            field=models.ForeignKey(related_name='instances', verbose_name='service', to='miscellaneous.MiscService'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='instances', verbose_name='service', to='miscellaneous.MiscService'),
         ),
     ]

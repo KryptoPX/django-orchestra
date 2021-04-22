@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import models, migrations
 from django.conf import settings
+import django.db.models.deletion
 import orchestra.core.validators
 
 
@@ -19,7 +20,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(serialize=False, primary_key=True, verbose_name='ID', auto_created=True)),
                 ('name', models.CharField(verbose_name='name', max_length=64, validators=[orchestra.core.validators.validate_name])),
                 ('type', models.CharField(default='mysql', choices=[('mysql', 'MySQL'), ('postgres', 'PostgreSQL')], verbose_name='type', max_length=32)),
-                ('account', models.ForeignKey(related_name='databases', verbose_name='Account', to=settings.AUTH_USER_MODEL)),
+                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='databases', verbose_name='Account', to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
@@ -29,7 +30,7 @@ class Migration(migrations.Migration):
                 ('username', models.CharField(verbose_name='username', max_length=16, validators=[orchestra.core.validators.validate_name])),
                 ('password', models.CharField(verbose_name='password', max_length=256)),
                 ('type', models.CharField(default='mysql', choices=[('mysql', 'MySQL'), ('postgres', 'PostgreSQL')], verbose_name='type', max_length=32)),
-                ('account', models.ForeignKey(related_name='databaseusers', verbose_name='Account', to=settings.AUTH_USER_MODEL)),
+                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='databaseusers', verbose_name='Account', to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name_plural': 'DB users',

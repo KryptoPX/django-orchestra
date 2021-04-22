@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import django.db.models.deletion
 from django.db import models, migrations
 import orchestra.models.fields
 
@@ -38,8 +39,8 @@ class Migration(migrations.Migration):
                 ('backend', models.CharField(max_length=256, verbose_name='backend')),
                 ('action', models.CharField(max_length=64, verbose_name='action')),
                 ('object_id', models.PositiveIntegerField()),
-                ('content_type', models.ForeignKey(to='contenttypes.ContentType')),
-                ('log', models.ForeignKey(related_name='operations', to='orchestration.BackendLog')),
+                ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType')),
+                ('log', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='operations', to='orchestration.BackendLog')),
             ],
             options={
                 'verbose_name_plural': 'Operations',
@@ -68,12 +69,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='route',
             name='host',
-            field=models.ForeignKey(to='orchestration.Server', verbose_name='host'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='orchestration.Server', verbose_name='host'),
         ),
         migrations.AddField(
             model_name='backendlog',
             name='server',
-            field=models.ForeignKey(related_name='execution_logs', to='orchestration.Server', verbose_name='server'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='execution_logs', to='orchestration.Server', verbose_name='server'),
         ),
         migrations.AlterUniqueTogether(
             name='route',

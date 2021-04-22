@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import django.db.models.deletion
 from django.db import models, migrations
 
 
@@ -32,7 +33,7 @@ class Migration(migrations.Migration):
                 ('result', models.CharField(choices=[('SUCCESS', 'Success'), ('FAILURE', 'Failure')], default='SUCCESS', max_length=16)),
                 ('date', models.DateTimeField(auto_now_add=True)),
                 ('log_message', models.TextField()),
-                ('message', models.ForeignKey(to='mailer.Message', editable=False, related_name='logs')),
+                ('message', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='mailer.Message', editable=False, related_name='logs')),
             ],
         ),
     ]

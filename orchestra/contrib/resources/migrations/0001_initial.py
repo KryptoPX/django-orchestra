@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import django.db.models.deletion
 import orchestra.contrib.resources.validators
 import orchestra.models.fields
 import django.utils.timezone
@@ -24,7 +25,7 @@ class Migration(migrations.Migration):
                 ('object_id', models.PositiveIntegerField(verbose_name='object id')),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now, verbose_name='created')),
                 ('value', models.DecimalField(decimal_places=2, max_digits=16, verbose_name='value')),
-                ('content_type', models.ForeignKey(verbose_name='content type', to='contenttypes.ContentType')),
+                ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, verbose_name='content type', to='contenttypes.ContentType')),
             ],
             options={
                 'get_latest_by': 'id',
@@ -45,8 +46,8 @@ class Migration(migrations.Migration):
                 ('disable_trigger', models.BooleanField(help_text='Disables monitors exeeded and recovery triggers', default=False, verbose_name='disable trigger')),
                 ('monitors', orchestra.models.fields.MultiSelectField(choices=[('Apache2Traffic', '[M] Apache 2 Traffic'), ('DovecotMaildirDisk', '[M] Dovecot Maildir size'), ('Exim4Traffic', '[M] Exim4 traffic'), ('MailmanSubscribers', '[M] Mailman subscribers'), ('MailmanTraffic', '[M] Mailman traffic'), ('MysqlDisk', '[M] MySQL disk'), ('OpenVZTraffic', '[M] OpenVZTraffic'), ('PostfixMailscannerTraffic', '[M] Postfix-Mailscanner traffic'), ('UNIXUserDisk', '[M] UNIX user disk'), ('VsFTPdTraffic', '[M] VsFTPd traffic')], blank=True, help_text='Monitor backends used for monitoring this resource.', max_length=256, verbose_name='monitors')),
                 ('is_active', models.BooleanField(default=True, verbose_name='active')),
-                ('content_type', models.ForeignKey(help_text='Model where this resource will be hooked.', to='contenttypes.ContentType')),
-                ('crontab', models.ForeignKey(help_text='Crontab for periodic execution. Leave it empty to disable periodic monitoring', to='djcelery.CrontabSchedule', verbose_name='crontab', blank=True, null=True)),
+                ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, help_text='Model where this resource will be hooked.', to='contenttypes.ContentType')),
+                ('crontab', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, help_text='Crontab for periodic execution. Leave it empty to disable periodic monitoring', to='djcelery.CrontabSchedule', verbose_name='crontab', blank=True, null=True)),
             ],
         ),
         migrations.CreateModel(
@@ -57,8 +58,8 @@ class Migration(migrations.Migration):
                 ('used', models.DecimalField(decimal_places=3, editable=False, max_digits=16, null=True, verbose_name='used')),
                 ('updated_at', models.DateTimeField(editable=False, null=True, verbose_name='updated')),
                 ('allocated', models.DecimalField(decimal_places=2, max_digits=8, blank=True, null=True, verbose_name='allocated')),
-                ('content_type', models.ForeignKey(verbose_name='content type', to='contenttypes.ContentType')),
-                ('resource', models.ForeignKey(related_name='dataset', to='resources.Resource', verbose_name='resource')),
+                ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, verbose_name='content type', to='contenttypes.ContentType')),
+                ('resource', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='dataset', to='resources.Resource', verbose_name='resource')),
             ],
             options={
                 'verbose_name_plural': 'resource data',

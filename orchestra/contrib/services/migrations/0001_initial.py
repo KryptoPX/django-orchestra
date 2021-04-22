@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
@@ -32,7 +33,7 @@ class Migration(migrations.Migration):
                 ('rate_algorithm', models.CharField(default='MATCH_PRICE', help_text='Algorithm used to interprete the rating table.<br>&nbsp;&nbsp;Match price: Only <b>the rate</b> with a) inmediate inferior metric and b) lower price is applied. Nominal price will be used when initial block is missing.<br>&nbsp;&nbsp;Step price: All rates with a quantity lower than the metric are applied. Nominal price will be used when initial block is missing.', max_length=16, choices=[('MATCH_PRICE', 'Match price'), ('STEP_PRICE', 'Step price')], verbose_name='rate algorithm')),
                 ('on_cancel', models.CharField(default='DISCOUNT', help_text='Defines the cancellation behaviour of this service.', max_length=16, choices=[('NOTHING', 'Nothing'), ('DISCOUNT', 'Discount'), ('COMPENSATE', 'Compensat'), ('REFUND', 'Refund')], verbose_name='on cancel')),
                 ('payment_style', models.CharField(default='PREPAY', help_text='Designates whether this service should be paid after consumtion (postpay/on demand) or prepaid.', max_length=16, choices=[('PREPAY', 'Prepay'), ('POSTPAY', 'Postpay (on demand)')], verbose_name='payment style')),
-                ('content_type', models.ForeignKey(help_text='Content type of the related service objects.', to='contenttypes.ContentType', verbose_name='content type')),
+                ('content_type', models.ForeignKey(help_text='Content type of the related service objects.', on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType', verbose_name='content type')),
             ],
         ),
     ]

@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import django.db.models.deletion
 import orchestra.core.validators
 from django.conf import settings
 
@@ -17,7 +18,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='systemuser',
             name='account',
-            field=models.ForeignKey(related_name='systemusers', to=settings.AUTH_USER_MODEL, default=1, verbose_name='Account'),
+            field=models.ForeignKey(related_name='systemusers', to=settings.AUTH_USER_MODEL, default=1, on_delete=django.db.models.deletion.CASCADE, verbose_name='Account'),
             preserve_default=False,
         ),
     ]
