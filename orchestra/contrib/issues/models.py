@@ -163,7 +163,7 @@ class Ticket(models.Model):
 class Message(models.Model):
     ticket = models.ForeignKey('issues.Ticket', on_delete=models.CASCADE,
         verbose_name=_("ticket"), related_name='messages')
-    author = models.ForeignKey(djsettings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+    author = models.ForeignKey(djsettings.AUTH_USER_MODEL, on_delete=models.CASCADE,
         verbose_name=_("author"), related_name='ticket_messages')
     author_name = models.CharField(_("author name"), max_length=256, blank=True)
     content = models.TextField(_("content"))
