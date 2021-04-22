@@ -34,7 +34,7 @@ def create_account_creation_form():
             fields[field_name] = forms.BooleanField(
                 initial=True, required=False, label=label, help_text=help_text)
             create_related.append((model, key, kwargs, help_text))
-        
+
     def clean(self, create_related=create_related):
         """ unique usernames between accounts and system users """
         cleaned_data = UserCreationForm.clean(self)
@@ -47,7 +47,7 @@ def create_account_creation_form():
             # Previous validation error
             return
         errors = {}
-        systemuser_model = Account.main_systemuser.field.rel.to
+        systemuser_model = Account.main_systemuser.field.model
         if systemuser_model.objects.filter(username=account.username).exists():
             errors['username'] = _("A system user with this name already exists.")
         for model, key, related_kwargs, __ in create_related:
@@ -62,11 +62,11 @@ def create_account_creation_form():
                     params={'type': verbose_name})
         if errors:
             raise ValidationError(errors)
-    
+
     def save_model(self, account):
         enable_systemuser=self.cleaned_data['enable_systemuser']
         account.save(active_systemuser=enable_systemuser)
-    
+
     def save_related(self, account):
         for model, key, related_kwargs, __ in settings.ACCOUNTS_CREATE_RELATED:
             model = apps.get_model(model)
@@ -76,14 +76,14 @@ def create_account_creation_form():
                     key: eval(value, {'account': account}) for key, value in related_kwargs.items()
                 }
                 model.objects.create(account=account, **kwargs)
-    
+
     fields.update({
         'create_related_fields': list(fields.keys()),
         'clean': clean,
         'save_model': save_model,
         'save_related': save_related,
     })
-    
+
     return type('AccountCreationForm', (UserCreationForm,), fields)
 
 

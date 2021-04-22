@@ -13,23 +13,23 @@ from .validators import validate_domain_protocol
 
 class RelatedDomainSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSerializer):
     class Meta:
-        model = Website.domains.field.rel.to
+        model = Website.domains.field.model
         fields = ('url', 'id', 'name')
 
 
 class RelatedWebAppSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSerializer):
     class Meta:
-        model = Content.webapp.field.rel.to
+        model = Content.webapp.field.model
         fields = ('url', 'id', 'name', 'type')
 
 
 class ContentSerializer(serializers.ModelSerializer):
     webapp = RelatedWebAppSerializer()
-    
+
     class Meta:
         model = Content
         fields = ('webapp', 'path')
-    
+
     def get_identity(self, data):
         return '%s-%s' % (data.get('website'), data.get('path'))
 
@@ -38,10 +38,10 @@ class DirectiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebsiteDirective
         fields = ('name', 'value')
-    
+
     def to_representation(self, instance):
         return {prop.name: prop.value for prop in instance.all()}
-    
+
     def to_internal_value(self, data):
         return data
 
@@ -50,12 +50,12 @@ class WebsiteSerializer(AccountSerializerMixin, HyperlinkedModelSerializer):
     domains = RelatedDomainSerializer(many=True, required=False)
     contents = ContentSerializer(required=False, many=True, source='content_set')
     directives = DirectiveSerializer(required=False)
-    
+
     class Meta:
         model = Website
         fields = ('url', 'id', 'name', 'protocol', 'domains', 'is_active', 'contents', 'directives')
         postonly_fields = ('name',)
-    
+
     def validate(self, data):
         """ Prevent multiples domains on the same protocol """
         # Validate location and directive uniqueness
@@ -87,14 +87,14 @@ class WebsiteSerializer(AccountSerializerMixin, HyperlinkedModelSerializer):
         if errors:
             raise ValidationError(errors)
         return data
-    
+
     def create(self, validated_data):
         directives_data = validated_data.pop('directives')
         webapp = super(WebsiteSerializer, self).create(validated_data)
         for key, value in directives_data.items():
             WebsiteDirective.objects.create(webapp=webapp, name=key, value=value)
         return webap
-    
+
     def update_directives(self, instance, directives_data):
         existing = {}
         for obj in instance.directives.all():
@@ -112,13 +112,13 @@ class WebsiteSerializer(AccountSerializerMixin, HyperlinkedModelSerializer):
                     directive.save(update_fields=('value',))
         for to_delete in set(existing.keys())-posted:
             existing[to_delete].delete()
-    
+
     def update_contents(self, instance, contents_data):
         raise NotImplementedError
-    
+
     def update_domains(self, instance, domains_data):
         raise NotImplementedError
-    
+
     def update(self, instance, validated_data):
         directives_data = validated_data.pop('directives')
         domains_data = validated_data.pop('domains')

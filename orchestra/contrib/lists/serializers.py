@@ -12,7 +12,7 @@ from .models import List
 
 class RelatedDomainSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSerializer):
     class Meta:
-        model = List.address_domain.field.rel.to
+        model = List.address_domain.field.model
         fields = ('url', 'id', 'name')
 
 
@@ -26,14 +26,14 @@ class ListSerializer(AccountSerializerMixin, SetPasswordHyperlinkedSerializer):
                              'This value may contain any ascii character except for '
                              ' \'/"/\\/ characters.'), 'invalid'),
         ])
-    
+
     address_domain = RelatedDomainSerializer(required=False)
-    
+
     class Meta:
         model = List
         fields = ('url', 'id', 'name', 'password', 'address_name', 'address_domain', 'admin_email', 'is_active',)
         postonly_fields = ('name', 'password')
-    
+
     def validate_address_domain(self, address_name):
         if self.instance:
             address_domain = address_domain or self.instance.address_domain

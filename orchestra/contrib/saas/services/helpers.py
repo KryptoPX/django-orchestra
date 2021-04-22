@@ -42,7 +42,7 @@ def clean_custom_url(saas):
         )
     except Website.DoesNotExist:
         # get or create domain
-        Domain = Website.domains.field.rel.to
+        Domain = Website.domains.field.model
         try:
             domain = Domain.objects.get(name=url.netloc)
         except Domain.DoesNotExist:
@@ -51,7 +51,7 @@ def clean_custom_url(saas):
             })
         if domain.account != account:
             raise ValidationError({
-                'custom_url': _("Domain %s does not belong to account %s, it's from %s.") % 
+                'custom_url': _("Domain %s does not belong to account %s, it's from %s.") %
                     (url.netloc, account, domain.account),
             })
         # Create new website for custom_url
@@ -110,7 +110,7 @@ def create_or_update_directive(saas):
             account=account,
         )
     except Website.DoesNotExist:
-        Domain = Website.domains.field.rel.to
+        Domain = Website.domains.field.model
         domain = Domain.objects.get(name=url.netloc)
         # Create new website for custom_url
         tgt_server = Server.objects.get(name='web.pangea.lan')
