@@ -1,3 +1,7 @@
+from django.utils.text import format_lazy
+from django.utils.translation import ugettext_lazy
+
+
 def get_chunks(porders, ini, end, ix=0):
     if ix >= len(porders):
         return [[ini, end, []]]
@@ -41,10 +45,10 @@ class Interval(object):
         self.ini = ini
         self.end = end
         self.order = order
-    
+
     def __len__(self):
         return max((self.end-self.ini).days, 0)
-    
+
     def __sub__(self, other):
         remaining = []
         if self.ini < other.ini:
@@ -52,13 +56,13 @@ class Interval(object):
         if self.end > other.end:
             remaining.append(Interval(max(self.ini,other.end), self.end, self.order))
         return remaining
-    
+
     def __repr__(self):
         return "<ini:{ini}/end:{end}>".format(
             ini=self.ini.strftime('%Y-%-m-%-d'),
             end=self.end.strftime('%Y-%-m-%-d')
         )
-    
+
     def intersect(self, other, remaining_self=None, remaining_other=None):
         if remaining_self is not None:
             remaining_self += (self - other)
@@ -69,7 +73,7 @@ class Interval(object):
             return result
         else:
             return None
-    
+
     def intersect_set(self, others, remaining_self=None, remaining_other=None):
         intersections = []
         for interval in others:
@@ -130,3 +134,16 @@ def compensate(order, compensations):
     for __, compensation in ordered_intersections:
         remaining_compensations.append(compensation)
     return remaining_compensations, applied_compensations
+
+
+def get_rate_methods_help_text(rate_class):
+    method_help_texts = [
+        format_lazy('{}' * 4, *['<br>&nbsp;&nbsp;', method.verbose_name, ': ', method.help_text])
+            for method in rate_class.get_methods().values()
+    ]
+    prefix = ugettext_lazy("Algorithm used to interprete the rating table.")
+    help_text_items = [prefix] + method_help_texts
+    return format_lazy(
+        '{}' * len(help_text_items),
+        *help_text_items
+    )

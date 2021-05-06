@@ -1,18 +1,20 @@
 import calendar
 import decimal
+from orchestra.contrib.services import helpers
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.apps import apps
 from django.utils.functional import cached_property
 from django.utils.module_loading import autodiscover_modules
-from django.utils.translation import string_concat, ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 
 from orchestra.core import caches, validators
 from orchestra.utils.python import import_class
 
 from . import settings
 from .handlers import ServiceHandler
+from .helpers import get_rate_methods_help_text
 
 
 autodiscover_modules('handlers')
@@ -145,13 +147,12 @@ class Service(models.Model):
             (ANUAL, _("Anual data")),
         ),
         default=BILLING_PERIOD)
-    rate_algorithm = models.CharField(_("rate algorithm"), max_length=64,
+    rate_algorithm = models.CharField(
+        _("rate algorithm"), max_length=64,
         choices=rate_class.get_choices(),
         default=rate_class.get_default(),
-        help_text=string_concat(_("Algorithm used to interprete the rating table."), *[
-            string_concat('<br>&nbsp;&nbsp;', method.verbose_name, ': ', method.help_text)
-                for name, method in rate_class.get_methods().items()
-        ]))
+        help_text=get_rate_methods_help_text(rate_class),
+    )
     on_cancel = models.CharField(_("on cancel"), max_length=16,
         help_text=_("Defines the cancellation behaviour of this service."),
         choices=(
