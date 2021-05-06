@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from rest_framework import viewsets
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import action
 
 from orchestra.api import router, LogApiMixin
 from orchestra.contrib.accounts.api import AccountApiMixin
@@ -14,8 +14,8 @@ from .serializers import BillSerializer
 class BillViewSet(LogApiMixin, AccountApiMixin, viewsets.ModelViewSet):
     queryset = Bill.objects.all()
     serializer_class = BillSerializer
-    
-    @detail_route(methods=['get'])
+
+    @action(detail=True, methods=['get'])
     def document(self, request, pk):
         bill = self.get_object()
         content_type = request.META.get('HTTP_ACCEPT')
