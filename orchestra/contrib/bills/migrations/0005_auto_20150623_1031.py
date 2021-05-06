@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import django.db.models.deletion
 from django.db import models, migrations
 
 
@@ -14,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='bill',
             name='amend_of',
-            field=models.ForeignKey(to='bills.Bill', blank=True, related_name='amends', verbose_name='amend of', null=True),
+            field=models.ForeignKey(to='bills.Bill', blank=True, on_delete=django.db.models.deletion.CASCADE, related_name='amends', verbose_name='amend of', null=True),
         ),
         migrations.AlterField(
             model_name='billcontact',

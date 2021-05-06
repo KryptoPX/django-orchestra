@@ -6,11 +6,11 @@ def retrieve_state(servers):
     pings = []
     for server in servers:
         address = server.get_address()
-        ping = run('ping -c 1 -w 1 %s' % address, async=True)
+        ping = run('ping -c 1 -w 1 %s' % address, run_async=True)
         pings.append(ping)
-        uptime = sshrun(address, 'uptime', persist=True, async=True, options={'ConnectTimeout': 1})
+        uptime = sshrun(address, 'uptime', persist=True, run_async=True, options={'ConnectTimeout': 1})
         uptimes.append(uptime)
-    
+
     state = {}
     for server, ping, uptime in zip(servers, pings, uptimes):
         ping = join(ping, silent=True)
@@ -19,7 +19,7 @@ def retrieve_state(servers):
             ping = '%s ms' % ping.split('/')[4]
         else:
             ping = '<span style="color:red">Offline</span>'
-        
+
         uptime = join(uptime, silent=True)
         uptime_stderr = uptime.stderr.decode()
         uptime = uptime.stdout.decode().split()
@@ -28,5 +28,5 @@ def retrieve_state(servers):
         else:
             uptime = '<span style="color:red">%s</span>' % uptime_stderr
         state[server.pk] = (ping, uptime)
-    
+
     return state

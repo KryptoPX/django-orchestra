@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import models, migrations
 import django.core.validators
+import django.db.models.deletion
 import django.utils.timezone
 import django.contrib.auth.models
 
@@ -32,7 +33,7 @@ class Migration(migrations.Migration):
                 ('is_superuser', models.BooleanField(help_text='Designates that this user has all permissions without explicitly assigning them.', default=False, verbose_name='superuser status')),
                 ('is_active', models.BooleanField(help_text='Designates whether this account should be treated as active. Unselect this instead of deleting accounts.', default=True, verbose_name='active')),
                 ('date_joined', models.DateTimeField(verbose_name='date joined', default=django.utils.timezone.now)),
-                ('main_systemuser', models.ForeignKey(to='systemusers.SystemUser', editable=False, null=True, related_name='accounts_main')),
+                ('main_systemuser', models.ForeignKey(to='systemusers.SystemUser', editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='accounts_main')),
             ],
             options={
                 'abstract': False,

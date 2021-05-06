@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.shortcuts import redirect, render
 from django.utils.safestring import mark_safe
 from django.utils.translation import ungettext, ugettext_lazy as _
@@ -7,14 +7,14 @@ from django.utils.translation import ungettext, ugettext_lazy as _
 def run_monitor(modeladmin, request, queryset):
     """ Resource and ResourceData run monitors """
     referer = request.META.get('HTTP_REFERER')
-    async = modeladmin.model.monitor.__defaults__[0]
+    run_async = modeladmin.model.monitor.__defaults__[0]
     logs = set()
     for resource in queryset:
         rlogs = resource.monitor()
-        if not async:
+        if not run_async:
             logs = logs.union(set([str(log.pk) for log in rlogs]))
         modeladmin.log_change(request, resource, _("Run monitors"))
-    if async:
+    if run_async:
         num = len(queryset)
         # TODO listfilter by uuid: task.request.id + ?task_id__in=ids
         link = reverse('admin:djcelery_taskstate_changelist')

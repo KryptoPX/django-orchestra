@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
@@ -20,7 +20,7 @@ class CMSAppForm(PHPAppForm):
     password = forms.CharField(label=_("Password"),
             help_text=_("Initial database and WordPress admin password.<br>"
                         "Subsequent changes to the admin password will not be reflected."))
-    
+
     def __init__(self, *args, **kwargs):
         super(CMSAppForm, self).__init__(*args, **kwargs)
         if self.instance:
@@ -55,20 +55,20 @@ class CMSApp(PHPApp):
     db_type = Database.MYSQL
     abstract = True
     db_prefix = 'cms_'
-    
+
     def get_db_name(self):
         db_name = '%s%s_%s' % (self.db_prefix, self.instance.name, self.instance.account)
         # Limit for mysql database names
         return db_name[:65]
-    
+
     def get_db_user(self):
         db_name = self.get_db_name()
         # Limit for mysql user names
         return db_name[:16]
-    
+
     def get_password(self):
         return random_ascii(10)
-    
+
     def validate(self):
         super(CMSApp, self).validate()
         create = not self.instance.pk
@@ -83,7 +83,7 @@ class CMSApp(PHPApp):
                     raise ValidationError({
                         'name': e.messages,
                     })
-    
+
     def save(self):
         db_name = self.get_db_name()
         db_user = self.get_db_user()

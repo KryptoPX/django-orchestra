@@ -6,7 +6,7 @@ from orchestra.core import services
 def get_related_object(origin, max_depth=2):
     """
     Introspects origin object and return the first related service object
-    
+
     WARNING this is NOT an exhaustive search but a compromise between cost and
             flexibility. A more comprehensive approach may be considered if
             a use-case calls for it.
@@ -16,12 +16,12 @@ def get_related_object(origin, max_depth=2):
             if hasattr(field, 'ct_field'):
                 yield getattr(node, field.name)
         for field in node._meta.fields:
-            if field.rel:
+            if field.remote_field:
                 try:
                     yield getattr(node, field.name)
                 except ObjectDoesNotExist:
                     pass
-    
+
     # BFS model relation transversal
     queue = [[origin]]
     while queue:

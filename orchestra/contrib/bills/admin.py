@@ -2,7 +2,7 @@ from django import forms
 from django.conf.urls import url
 from django.contrib import admin, messages
 from django.contrib.admin.utils import unquote
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models
 from django.db.models import F, Sum, Prefetch
 from django.db.models.functions import Coalesce
@@ -39,18 +39,18 @@ PAYMENT_STATE_COLORS = {
 class BillSublineInline(admin.TabularInline):
     model = BillSubline
     fields = ('description', 'total', 'type')
-    
+
     def get_readonly_fields(self, request, obj=None):
         fields = super().get_readonly_fields(request, obj)
         if obj and not obj.bill.is_open:
             return self.get_fields(request)
         return fields
-    
+
     def get_max_num(self, request, obj=None):
         if obj and not obj.bill.is_open:
             return 0
         return super().get_max_num(request, obj)
-    
+
     def has_delete_permission(self, request, obj=None):
         if obj and not obj.bill.is_open:
             return False
@@ -64,9 +64,9 @@ class BillLineInline(admin.TabularInline):
         'subtotal', 'display_total',
     )
     readonly_fields = ('display_total', 'order_link')
-    
+
     order_link = admin_link('order', display='pk')
-    
+
     def display_total(self, line):
         if line.pk:
             total = line.compute_total()
@@ -79,7 +79,7 @@ class BillLineInline(admin.TabularInline):
             return '<a href="%s">%s</a>' % (url, total)
     display_total.short_description = _("Total")
     display_total.allow_tags = True
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ Make value input widget bigger """
         if db_field.name == 'description':
@@ -87,7 +87,7 @@ class BillLineInline(admin.TabularInline):
         elif db_field.name not in ('start_on', 'end_on'):
             kwargs['widget'] = forms.TextInput(attrs={'size':'6'})
         return super().formfield_for_dbfield(db_field, **kwargs)
-    
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.prefetch_related('sublines').select_related('order')
@@ -96,14 +96,14 @@ class BillLineInline(admin.TabularInline):
 class ClosedBillLineInline(BillLineInline):
     # TODO reimplement as nested inlines when upstream
     #      https://code.djangoproject.com/ticket/9025
-    
+
     fields = (
         'display_description', 'order_link', 'start_on', 'end_on', 'rate', 'quantity', 'tax',
         'display_subtotal', 'display_total'
     )
     readonly_fields = fields
     can_delete = False
-    
+
     def display_description(self, line):
         descriptions = [line.description]
         for subline in line.sublines.all():
@@ -111,7 +111,7 @@ class ClosedBillLineInline(BillLineInline):
         return '<br>'.join(descriptions)
     display_description.short_description = _("Description")
     display_description.allow_tags = True
-    
+
     def display_subtotal(self, line):
         subtotals = ['&nbsp;' + str(line.subtotal)]
         for subline in line.sublines.all():
@@ -119,13 +119,13 @@ class ClosedBillLineInline(BillLineInline):
         return '<br>'.join(subtotals)
     display_subtotal.short_description = _("Subtotal")
     display_subtotal.allow_tags = True
-    
+
     def display_total(self, line):
         if line.pk:
             return line.compute_total()
     display_total.short_description = _("Total")
     display_total.allow_tags = True
-    
+
     def has_add_permission(self, request):
         return False
 
@@ -158,28 +158,28 @@ class BillLineAdmin(admin.ModelAdmin):
     list_select_related = ('bill', 'bill__account')
     search_fields = ('description', 'bill__number')
     inlines = (BillSublineInline,)
-    
+
     account_link = admin_link('bill__account')
     bill_link = admin_link('bill')
     order_link = admin_link('order')
     amended_line_link = admin_link('amended_line')
-    
+
     def display_is_open(self, instance):
         return instance.bill.is_open
     display_is_open.short_description = _("Is open")
     display_is_open.boolean = True
-    
+
     def display_sublinetotal(self, instance):
         total = instance.subline_total
         return total if total is not None else '---'
     display_sublinetotal.short_description = _("Sublines")
     display_sublinetotal.admin_order_field = 'subline_total'
-    
+
     def display_total(self, instance):
         return round(instance.computed_total or 0, 2)
     display_total.short_description = _("Total")
     display_total.admin_order_field = 'computed_total'
-    
+
     def get_readonly_fields(self, request, obj=None):
         fields = super().get_readonly_fields(request, obj)
         if obj and not obj.bill.is_open:
@@ -188,7 +188,7 @@ class BillLineAdmin(admin.ModelAdmin):
                 'subtotal', 'order_billed_on', 'order_billed_until'
             ]
         return fields
-    
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         qs = qs.annotate(
@@ -196,7 +196,7 @@ class BillLineAdmin(admin.ModelAdmin):
             computed_total=(F('subtotal') + Sum(Coalesce('sublines__total', 0))) * (1+F('tax')/100),
         )
         return qs
-    
+
     def has_delete_permission(self, request, obj=None):
         if obj and not obj.bill.is_open:
             return False
@@ -209,7 +209,7 @@ class BillLineManagerAdmin(BillLineAdmin):
         if self.bill_ids:
             return qset.filter(bill_id__in=self.bill_ids)
         return qset
-    
+
     def changelist_view(self, request, extra_context=None):
         GET_copy = request.GET.copy()
         bill_ids = GET_copy.pop('ids', None)
@@ -304,9 +304,9 @@ class AmendInline(BillAdminMixin, admin.TabularInline):
     verbose_name_plural = _("Amends")
     can_delete = False
     extra = 0
-    
+
     self_link = admin_link('__str__')
-    
+
     def has_add_permission(self, *args, **kwargs):
         return False
 
@@ -354,12 +354,12 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
         'closed_on_display', 'updated_on_display', 'display_total_with_subtotals',
     )
     date_hierarchy = 'closed_on'
-    
+
     created_on_display = admin_date('created_on', short_description=_("Created"))
     closed_on_display = admin_date('closed_on', short_description=_("Closed"))
     updated_on_display = admin_date('updated_on', short_description=_("Updated"))
     amend_of_link = admin_link('amend_of')
-    
+
 #    def amend_links(self, bill):
 #        links = []
 #        for amend in bill.amends.all():
@@ -368,19 +368,19 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
 #        return '<br>'.join(links)
 #    amend_links.short_description = _("Amends")
 #    amend_links.allow_tags = True
-    
+
     def num_lines(self, bill):
         return bill.lines__count
     num_lines.admin_order_field = 'lines__count'
     num_lines.short_description = _("lines")
-    
+
     def display_total(self, bill):
         currency = settings.BILLS_CURRENCY.lower()
         return '%s &%s;' % (bill.compute_total(), currency)
     display_total.allow_tags = True
     display_total.short_description = _("total")
     display_total.admin_order_field = 'approx_total'
-    
+
     def type_link(self, bill):
         bill_type = bill.type.lower()
         url = reverse('admin:bills_%s_changelist' % bill_type)
@@ -388,7 +388,7 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
     type_link.allow_tags = True
     type_link.short_description = _("type")
     type_link.admin_order_field = 'type'
-    
+
     def get_urls(self):
         """ Hook bill lines management URLs on bill admin """
         urls = super().get_urls()
@@ -399,13 +399,13 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
                 name='bills_bill_manage_lines'),
         ]
         return extra_urls + urls
-    
+
     def get_readonly_fields(self, request, obj=None):
         fields = super().get_readonly_fields(request, obj)
         if obj and not obj.is_open:
             fields += self.add_fields
         return fields
-    
+
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         if obj:
@@ -418,7 +418,7 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
             if obj.is_open:
                 fieldsets = fieldsets[0:-1]
         return fieldsets
-    
+
     def get_change_view_actions(self, obj=None):
         actions = super().get_change_view_actions(obj)
         exclude = []
@@ -428,7 +428,7 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
             if obj.type not in obj.AMEND_MAP:
                 exclude += ['amend_bills']
         return [action for action in actions if action.__name__ not in exclude]
-    
+
     def get_inline_instances(self, request, obj=None):
         cls = type(self)
         if obj and not obj.is_open:
@@ -439,7 +439,7 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
         else:
             cls.inlines = [BillLineInline]
         return super().get_inline_instances(request, obj)
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ Make value input widget bigger """
         if db_field.name == 'comments':
@@ -450,7 +450,7 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
         if db_field.name == 'amend_of':
             formfield.queryset = formfield.queryset.filter(is_open=False)
         return formfield
-    
+
     def change_view(self, request, object_id, **kwargs):
         # TODO raise404, here and everywhere
         bill = self.get_object(request, unquote(object_id))
@@ -471,7 +471,7 @@ admin.site.register(BillLine, BillLineAdmin)
 class BillContactInline(admin.StackedInline):
     model = BillContact
     fields = ('name', 'address', ('city', 'zipcode'), 'country', 'vat')
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ Make value input widget bigger """
         if db_field.name == 'name':

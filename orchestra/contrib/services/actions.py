@@ -1,5 +1,5 @@
 from django.contrib.admin import helpers
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import transaction
 from django.shortcuts import render, redirect
 from django.template.response import TemplateResponse

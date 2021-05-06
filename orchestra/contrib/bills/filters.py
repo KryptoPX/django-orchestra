@@ -1,5 +1,5 @@
 from django.contrib.admin import SimpleListFilter
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -11,11 +11,11 @@ class BillTypeListFilter(SimpleListFilter):
     """ Filter tickets by created_by according to request.user """
     title = 'Type'
     parameter_name = ''
-    
+
     def __init__(self, request, *args, **kwargs):
         super(BillTypeListFilter, self).__init__(request, *args, **kwargs)
         self.request = request
-    
+
     def lookups(self, request, model_admin):
         return (
             ('bill', _("All")),
@@ -25,13 +25,13 @@ class BillTypeListFilter(SimpleListFilter):
             ('amendmentfee', _("Amendment fee")),
             ('amendmentinvoice', _("Amendment invoice")),
         )
-    
+
     def queryset(self, request, queryset):
         return queryset
-    
+
     def value(self):
         return self.request.path.split('/')[-2]
-    
+
     def choices(self, cl):
         query = self.request.GET.urlencode()
         for lookup, title in self.lookup_choices:
@@ -45,7 +45,7 @@ class BillTypeListFilter(SimpleListFilter):
 class TotalListFilter(SimpleListFilter):
     title = _("total")
     parameter_name = 'total'
-    
+
     def lookups(self, request, model_admin):
         return (
             ('gt', mark_safe("total &gt; 0")),
@@ -53,7 +53,7 @@ class TotalListFilter(SimpleListFilter):
             ('eq', "total = 0"),
             ('ne', mark_safe("total &ne; 0")),
         )
-    
+
     def queryset(self, request, queryset):
         if self.value() == 'gt':
             return queryset.filter(approx_total__gt=0)
@@ -70,13 +70,13 @@ class HasBillContactListFilter(SimpleListFilter):
     """ Filter Nodes by group according to request.user """
     title = _("has bill contact")
     parameter_name = 'bill'
-    
+
     def lookups(self, request, model_admin):
         return (
             ('True', _("Yes")),
             ('False', _("No")),
         )
-    
+
     def queryset(self, request, queryset):
         if self.value() == 'True':
             return queryset.filter(billcontact__isnull=False)
@@ -87,7 +87,7 @@ class HasBillContactListFilter(SimpleListFilter):
 class PaymentStateListFilter(SimpleListFilter):
     title = _("payment state")
     parameter_name = 'payment_state'
-    
+
     def lookups(self, request, model_admin):
         return (
             ('OPEN', _("Open")),
@@ -95,7 +95,7 @@ class PaymentStateListFilter(SimpleListFilter):
             ('PENDING', _("Pending")),
             ('BAD_DEBT', _("Bad debt")),
         )
-    
+
     def queryset(self, request, queryset):
         # FIXME use queryset.computed_total instead of approx_total, bills.admin.BillAdmin.get_queryset
         Transaction = queryset.model.transactions.field.remote_field.related_model
@@ -137,7 +137,7 @@ class PaymentStateListFilter(SimpleListFilter):
 class AmendedListFilter(SimpleListFilter):
     title = _("amended")
     parameter_name = 'amended'
-    
+
     def lookups(self, request, model_admin):
         return (
             ('3', _("Closed amends")),
@@ -145,7 +145,7 @@ class AmendedListFilter(SimpleListFilter):
             ('1', _("Any amends")),
             ('0', _("No amends")),
         )
-    
+
     def queryset(self, request, queryset):
         if self.value() is None:
             return queryset

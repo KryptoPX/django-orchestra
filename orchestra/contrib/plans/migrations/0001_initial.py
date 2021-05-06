@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import django.db.models.deletion
 import orchestra.core.validators
 from django.conf import settings
 
@@ -18,7 +19,7 @@ class Migration(migrations.Migration):
             name='ContractedPlan',
             fields=[
                 ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
-                ('account', models.ForeignKey(to=settings.AUTH_USER_MODEL, related_name='plans', verbose_name='account')),
+                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL, related_name='plans', verbose_name='account')),
             ],
             options={
                 'verbose_name_plural': 'plans',
@@ -42,14 +43,14 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
                 ('quantity', models.PositiveIntegerField(help_text='See rate algorihm help text.', blank=True, verbose_name='quantity', null=True)),
                 ('price', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='price')),
-                ('plan', models.ForeignKey(to='plans.Plan', related_name='rates', verbose_name='plan')),
-                ('service', models.ForeignKey(to='services.Service', related_name='rates', verbose_name='service')),
+                ('plan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='plans.Plan', related_name='rates', verbose_name='plan')),
+                ('service', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='services.Service', related_name='rates', verbose_name='service')),
             ],
         ),
         migrations.AddField(
             model_name='contractedplan',
             name='plan',
-            field=models.ForeignKey(to='plans.Plan', related_name='contracts', verbose_name='plan'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='plans.Plan', related_name='contracts', verbose_name='plan'),
         ),
         migrations.AlterUniqueTogether(
             name='rate',

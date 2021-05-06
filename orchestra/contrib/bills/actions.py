@@ -5,7 +5,7 @@ from datetime import date
 from django.contrib import messages
 from django.contrib.admin import helpers
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import transaction
 from django.forms.models import modelformset_factory
 from django.http import HttpResponse, HttpResponseRedirect
@@ -179,7 +179,7 @@ def undo_billing(modeladmin, request, queryset):
                 group[line.order].append(line)
             except KeyError:
                 group[line.order] = [line]
-    
+
     # Validate
     for order, lines in group.items():
         prev = None
@@ -211,7 +211,7 @@ def undo_billing(modeladmin, request, queryset):
             messages.error(request, "Order does not have lines!.")
         order.billed_until = billed_until
         order.billed_on = billed_on
-    
+
     # Commit changes
     norders, nlines = 0, 0
     for order, lines in group.items():
@@ -221,7 +221,7 @@ def undo_billing(modeladmin, request, queryset):
         # TODO update order history undo billing
         order.save(update_fields=('billed_until', 'billed_on'))
         norders += 1
-    
+
     messages.success(request, _("%(norders)s orders and %(nlines)s lines undoed.") % {
         'nlines': nlines,
         'norders': norders

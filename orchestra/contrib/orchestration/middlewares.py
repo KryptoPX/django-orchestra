@@ -1,7 +1,7 @@
 from threading import local
 
 from django.contrib.admin.models import LogEntry
-from django.core.urlresolvers import resolve
+from django.urls import resolve
 from django.db import transaction
 from django.db.models.signals import pre_delete, post_save, m2m_changed
 from django.dispatch import receiver
@@ -39,12 +39,12 @@ class OperationsMiddleware(object):
     """
     Stores all the operations derived from save and delete signals and executes them
     at the end of the request/response cycle
-    
+
     It also works as a transaction middleware, making requets to run within an atomic block.
     """
     # Thread local is used because request object is not available on model signals
     thread_locals = local()
-    
+
     @classmethod
     def get_pending_operations(cls):
         # Check if an error poped up before OperationsMiddleware.process_request()
@@ -54,7 +54,7 @@ class OperationsMiddleware(object):
                 request.pending_operations = OrderedSet()
             return request.pending_operations
         return set()
-    
+
     @classmethod
     def get_route_cache(cls):
         """ chache the routes to save sql queries """
@@ -64,7 +64,7 @@ class OperationsMiddleware(object):
                 request.route_cache = {}
             return request.route_cache
         return {}
-    
+
     @classmethod
     def collect(cls, action, **kwargs):
         """ Collects all pending operations derived from model signals """
@@ -75,26 +75,26 @@ class OperationsMiddleware(object):
         kwargs['route_cache'] = cls.get_route_cache()
         instance = kwargs.pop('instance')
         manager.collect(instance, action, **kwargs)
-    
+
     def enter_transaction_management(self):
         type(self).thread_locals.transaction = transaction.atomic()
         type(self).thread_locals.transaction.__enter__()
-    
+
     def leave_transaction_management(self, exception=None):
         locals = type(self).thread_locals
         if hasattr(locals, 'transaction'):
             # Don't fucking know why sometimes thread_locals does not contain a transaction
             locals.transaction.__exit__(exception, None, None)
-    
+
     def process_request(self, request):
         """ Store request on a thread local variable """
         type(self).thread_locals.request = request
         self.enter_transaction_management()
-    
+
     def process_exception(self, request, exception):
         """Rolls back the database and leaves transaction management"""
         self.leave_transaction_management(exception)
-    
+
     def process_response(self, request, response):
         """ Processes pending backend operations """
         if response.status_code != 500:

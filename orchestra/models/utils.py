@@ -50,9 +50,9 @@ def get_model_field_path(origin, target):
         if node == target:
             return path
         for field in node._meta.fields:
-            if field.rel:
+            if field.remote_field:
                 new_model = list(model)
-                new_model.append(field.rel.to)
+                new_model.append(field.remote_field.model)
                 new_path = list(path)
                 new_path.append(field.name)
                 queue.append((new_model, new_path))

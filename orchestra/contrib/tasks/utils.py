@@ -13,7 +13,7 @@ def get_name(fn):
 
 
 def run(method, *args, **kwargs):
-    async = kwargs.pop('async', True)
+    run_async = kwargs.pop('run_async', True)
     thread = threading.Thread(target=close_connection(method), args=args, kwargs=kwargs)
     thread = Process(target=close_connection(counter))
     thread.start()

@@ -21,29 +21,29 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
     """
     Separates all the logic of billing handling from the model allowing to better
     customize its behaviout
-    
+
     Relax and enjoy the journey.
     """
     _PLAN = 'plan'
     _COMPENSATION = 'compensation'
     _PREPAY = 'prepay'
-    
+
     model = None
-    
+
     def __init__(self, service):
         self.service = service
-    
+
     def __getattr__(self, attr):
         return getattr(self.service, attr)
-    
+
     @classmethod
     def get_choices(cls):
         choices = super(ServiceHandler, cls).get_choices()
         return [('', _("Default"))] + choices
-    
+
     def validate_content_type(self, service):
         pass
-    
+
     def validate_expression(self, service, method):
         try:
             obj = service.content_type.model_class().objects.all()[0]
@@ -53,24 +53,24 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             bool(getattr(self, method)(obj))
         except Exception as exc:
             raise ValidationError(format_exception(exc))
-    
+
     def validate_match(self, service):
         if not service.match:
             service.match = 'True'
         self.validate_expression(service, 'matches')
-    
+
     def validate_metric(self, service):
         self.validate_expression(service, 'get_metric')
-    
+
     def validate_order_description(self, service):
         self.validate_expression(service, 'get_order_description')
-    
+
     def get_content_type(self):
         if not self.model:
             return self.content_type
         app_label, model = self.model.split('.')
         return ContentType.objects.get_by_natural_key(app_label, model.lower())
-    
+
     def get_expression_context(self, instance):
         return {
             'instance': instance,
@@ -85,14 +85,14 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             'log10': math.log10,
             'Decimal': decimal.Decimal,
         }
-    
+
     def matches(self, instance):
         if not self.match:
             # Blank expressions always evaluate True
             return True
         safe_locals = self.get_expression_context(instance)
         return eval(self.match, safe_locals)
-    
+
     def get_ignore_delta(self):
         if self.ignore_period == self.NEVER:
             return None
@@ -104,14 +104,14 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             return datetime.timedelta(months=value)
         else:
             raise ValueError("Unknown unit %s" % unit)
-    
+
     def get_order_ignore(self, order):
         """ service trial delta """
         ignore_delta = self.get_ignore_delta()
         if ignore_delta and (order.cancelled_on-ignore_delta).date() <= order.registered_on:
             return True
         return order.ignore
-    
+
     def get_ignore(self, instance):
         if self.ignore_superusers:
             account = getattr(instance, 'account', instance)
@@ -120,7 +120,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             if 'superuser' in settings.SERVICES_IGNORE_ACCOUNT_TYPE and account.is_superuser:
                 return True
         return False
-    
+
     def get_metric(self, instance):
         if self.metric:
             safe_locals = self.get_expression_context(instance)
@@ -128,7 +128,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
                 return eval(self.metric, safe_locals)
             except Exception as exc:
                 raise type(exc)("'%s' evaluating metric for '%s' service" % (exc, self.service))
-    
+
     def get_order_description(self, instance):
         safe_locals = self.get_expression_context(instance)
         account = getattr(instance, 'account', instance)
@@ -136,7 +136,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             if not self.order_description:
                 return '%s: %s' % (ugettext(self.description), instance)
             return eval(self.order_description, safe_locals)
-    
+
     def get_billing_point(self, order, bp=None, **options):
         cachable = bool(self.billing_point == self.FIXED_DATE and not options.get('fixed_point'))
         if not cachable or bp is None:
@@ -151,7 +151,10 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
                     else:
                         date = timezone.now().date()
                     if self.billing_point == self.ON_REGISTER:
-                        day = order.registered_on.day
+                        # handle edge cases of last day of the month:
+                        # e.g. on March is 31 but on April 30
+                        last_day_of_month = calendar.monthrange(date.year, date.month)[1]
+                        day = min(last_day_of_month, order.registered_on.day)
                     elif self.billing_point == self.FIXED_DATE:
                         day = 1
                     else:
@@ -171,6 +174,11 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
                         year = bp.year - relativedelta.relativedelta(years=1)
                     if bp.month >= month:
                         year = bp.year + 1
+
+                    # handle edge cases of last day of the month:
+                    # e.g. on March is 31 but on April 30
+                    last_day_of_month = calendar.monthrange(year,month)[1]
+                    day = min(last_day_of_month, day)
                     bp = datetime.date(year=year, month=month, day=day)
                 elif self.billing_period == self.NEVER:
                     bp = order.registered_on
@@ -179,7 +187,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
         if self.on_cancel != self.NOTHING and order.cancelled_on and order.cancelled_on < bp:
             bp = order.cancelled_on
         return bp
-    
+
 #    def aligned(self, date):
 #        if self.granularity == self.DAILY:
 #            return date
@@ -188,7 +196,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
 #        elif self.granularity == self.ANUAL:
 #            return datetime.date(year=date.year, month=1, day=1)
 #        raise NotImplementedError
-    
+
     def get_price_size(self, ini, end):
         rdelta = relativedelta.relativedelta(end, ini)
         anual_prepay_of_monthly_pricing = bool(
@@ -211,7 +219,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             raise NotImplementedError
         size = round(size, 2)
         return decimal.Decimal(str(size))
-    
+
     def get_pricing_slots(self, ini, end):
         day = 1
         month = settings.SERVICES_SERVICE_ANUAL_BILLING_MONTH
@@ -235,7 +243,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             if next >= end:
                 break
             ini = next
-    
+
     def get_pricing_rdelta(self):
         period = self.get_pricing_period()
         if period == self.MONTHLY:
@@ -244,13 +252,13 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             return relativedelta.relativedelta(years=1)
         elif period == self.NEVER:
             return None
-    
+
     def generate_discount(self, line, dtype, price):
         line.discounts.append(AttrDict(**{
             'type': dtype,
             'total': price,
         }))
-    
+
     def generate_line(self, order, price, *dates, metric=1, discounts=None, computed=False):
         """
         discounts: extra discounts to apply
@@ -263,7 +271,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
         else:
             raise AttributeError("WTF is '%s'?" % dates)
         discounts = discounts or ()
-        
+
         size = self.get_price_size(ini, end)
         if not computed:
             price = price * size
@@ -277,7 +285,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             'metric': metric,
             'discounts': [],
         })
-        
+
         if subtotal > price:
             plan_discount = price-subtotal
             self.generate_discount(line, self._PLAN, plan_discount)
@@ -290,7 +298,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             if dprice:
                 self.generate_discount(line, dtype, dprice)
         return line
-    
+
     def assign_compensations(self, givers, receivers, **options):
         compensations = []
         for order in givers:
@@ -313,7 +321,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
                 if hasattr(order, 'new_billed_until'):
                     order.billed_until = order.new_billed_until
                     order.save(update_fields=['billed_until'])
-    
+
     def apply_compensations(self, order, only_beyond=False):
         dsize = 0
         ini = order.billed_until or order.registered_on
@@ -339,7 +347,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
                 new_end = cend
                 dsize += self.get_price_size(comp.ini, cend)
         return dsize, new_end
-    
+
     def get_register_or_renew_events(self, porders, ini, end):
         counter = 0
         for order in porders:
@@ -354,7 +362,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
                     if registered != order.billed_until and order.billed_until > ini and order.billed_until <= end:
                         counter += 1
         return counter
-    
+
     def bill_concurrent_orders(self, account, porders, rates, ini, end):
         # Concurrent
         # Get pricing orders
@@ -403,7 +411,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
                     order, price, ini, end, discounts=discounts, computed=True)
                 lines.append(line)
         return lines
-    
+
     def bill_registered_or_renew_events(self, account, porders, rates):
         # Before registration
         lines = []
@@ -431,7 +439,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
                 line = self.generate_line(order, price, ini, end, discounts=discounts)
                 lines.append(line)
         return lines
-    
+
     def bill_with_orders(self, orders, account, **options):
         # For the "boundary conditions" just think that:
         #   date(2011, 1, 1) is equivalent to datetime(2011, 1, 1, 0, 0, 0)
@@ -458,7 +466,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             end = max(end, bp)
             orders_.append(order)
         orders = orders_
-        
+
         # Compensation
         related_orders = account.orders.filter(service=self.service)
         if self.payment_style == self.PREPAY and self.on_cancel == self.COMPENSATE:
@@ -504,7 +512,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
                 line = self.generate_line(order, price, ini, end, discounts=discounts)
                 lines.append(line)
         return lines
-    
+
     def bill_with_metric(self, orders, account, **options):
         lines = []
         bp = None
@@ -512,7 +520,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             prepay_discount = 0
             bp = self.get_billing_point(order, bp=bp, **options)
             recharged_until = datetime.date.min
-            
+
             if (self.billing_period != self.NEVER and
                 self.get_pricing_period() == self.NEVER and
                 self.payment_style == self.PREPAY and order.billed_on):
@@ -633,7 +641,7 @@ class ServiceHandler(plugins.Plugin, metaclass=plugins.PluginMount):
             # Last processed metric for futrue recharges
             order.new_billed_metric = metric
         return lines
-    
+
     def generate_bill_lines(self, orders, account, **options):
         if options.get('proforma', False):
             options['commit'] = False

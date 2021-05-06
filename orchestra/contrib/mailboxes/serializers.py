@@ -8,17 +8,17 @@ from .models import Mailbox, Address
 
 class RelatedDomainSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSerializer):
     class Meta:
-        model = Address.domain.field.rel.to
+        model = Address.domain.field.model
         fields = ('url', 'id', 'name')
 
 
 class RelatedAddressSerializer(AccountSerializerMixin, serializers.HyperlinkedModelSerializer):
     domain = RelatedDomainSerializer()
-    
+
     class Meta:
         model = Address
         fields = ('url', 'id', 'name', 'domain', 'forward')
-#    
+#
 #    def from_native(self, data, files=None):
 #        queryset = self.opts.model.objects.filter(account=self.account)
 #        return get_object_or_404(queryset, name=data['name'])
@@ -26,7 +26,7 @@ class RelatedAddressSerializer(AccountSerializerMixin, serializers.HyperlinkedMo
 
 class MailboxSerializer(AccountSerializerMixin, SetPasswordHyperlinkedSerializer):
     addresses = RelatedAddressSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = Mailbox
         fields = (
@@ -44,11 +44,11 @@ class RelatedMailboxSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSe
 class AddressSerializer(AccountSerializerMixin, serializers.HyperlinkedModelSerializer):
     domain = RelatedDomainSerializer()
     mailboxes = RelatedMailboxSerializer(many=True, required=False) #allow_add_remove=True
-    
+
     class Meta:
         model = Address
         fields = ('url', 'id', 'name', 'domain', 'mailboxes', 'forward')
-    
+
     def validate(self, attrs):
         attrs = super(AddressSerializer, self).validate(attrs)
         if not attrs['mailboxes'] and not attrs['forward']:

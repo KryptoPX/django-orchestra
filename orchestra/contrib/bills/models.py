@@ -1,7 +1,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.validators import ValidationError, RegexValidator
 from django.db import models
 from django.db.models import F, Sum
@@ -24,7 +24,7 @@ from . import settings
 
 class BillContact(models.Model):
     account = models.OneToOneField('accounts.Account', verbose_name=_("account"),
-        related_name='billcontact')
+        related_name='billcontact', on_delete=models.CASCADE)
     name = models.CharField(_("name"), max_length=256, blank=True,
         help_text=_("Account full name will be used when left blank."))
     address = models.TextField(_("address"))
@@ -36,13 +36,13 @@ class BillContact(models.Model):
         choices=settings.BILLS_CONTACT_COUNTRIES,
         default=settings.BILLS_CONTACT_DEFAULT_COUNTRY)
     vat = models.CharField(_("VAT number"), max_length=64)
-    
+
     def __str__(self):
         return self.name
-    
+
     def get_name(self):
         return self.name or self.account.get_full_name()
-    
+
     def clean(self):
         self.vat = self.vat.strip()
         self.city = self.city.strip()
@@ -99,12 +99,12 @@ class Bill(models.Model):
         INVOICE: AMENDMENTINVOICE,
         FEE: AMENDMENTFEE,
     }
-    
+
     number = models.CharField(_("number"), max_length=16, unique=True, blank=True)
     account = models.ForeignKey('accounts.Account', verbose_name=_("account"),
-        related_name='%(class)s')
+        related_name='%(class)s', on_delete=models.CASCADE)
     amend_of = models.ForeignKey('self', null=True, blank=True, verbose_name=_("amend of"),
-        related_name='amends')
+        related_name='amends', on_delete=models.SET_NULL)
     type = models.CharField(_("type"), max_length=16, choices=TYPES)
     created_on = models.DateField(_("created on"), auto_now_add=True)
     closed_on = models.DateField(_("closed on"), blank=True, null=True, db_index=True)
@@ -115,37 +115,37 @@ class Bill(models.Model):
 #    total = models.DecimalField(max_digits=12, decimal_places=2, null=True)
     comments = models.TextField(_("comments"), blank=True)
     html = models.TextField(_("HTML"), blank=True)
-    
+
     objects = BillManager()
-    
+
     class Meta:
         get_latest_by = 'id'
-    
+
     def __str__(self):
         return self.number
-    
+
     @classmethod
     def get_class_type(cls):
         if cls is models.DEFERRED:
             cls = cls.__base__
         return cls.__name__.upper()
-    
+
     @cached_property
     def total(self):
         return self.compute_total()
-    
+
     @cached_property
     def seller(self):
         return Account.objects.get_main().billcontact
-    
+
     @cached_property
     def buyer(self):
         return self.account.billcontact
-    
+
     @property
     def has_multiple_pages(self):
         return self.type != self.FEE
-    
+
     @cached_property
     def payment_state(self):
         if self.is_open or self.get_type() == self.PROFORMA:
@@ -192,7 +192,7 @@ class Bill(models.Model):
         elif executed:
             return self.EXECUTED
         return self.BAD_DEBT
-    
+
     def clean(self):
         if self.amend_of_id:
             errors = {}
@@ -206,27 +206,27 @@ class Bill(models.Model):
                 errors['amend_of'] = _("Related invoice is an amendment.")
             if errors:
                 raise ValidationError(errors)
-    
+
     def get_payment_state_display(self):
         value = self.payment_state
         return force_text(dict(self.PAYMENT_STATES).get(value, value))
-    
+
     def get_current_transaction(self):
         return self.transactions.exclude_rejected().first()
-    
+
     def get_type(self):
         return self.type or self.get_class_type()
-    
+
     @property
     def is_amend(self):
         return self.type in self.AMEND_MAP.values()
-    
+
     def get_amend_type(self):
         amend_type = self.AMEND_MAP.get(self.type)
         if amend_type is None:
             raise TypeError("%s has no associated amend type." % self.type)
         return amend_type
-    
+
     def get_number(self):
         cls = type(self)
         if cls is models.DEFERRED:
@@ -250,16 +250,16 @@ class Bill(models.Model):
         zeros = (number_length - len(str(number))) * '0'
         number = zeros + str(number)
         return '{prefix}{year}{number}'.format(prefix=prefix, year=year, number=number)
-    
+
     def get_due_date(self, payment=None):
         now = timezone.now()
         if payment:
             return now + payment.get_due_delta()
         return now + relativedelta(months=1)
-    
+
     def get_absolute_url(self):
         return reverse('admin:bills_bill_view', args=(self.pk,))
-    
+
     def close(self, payment=False):
         if not self.is_open:
             raise TypeError("Bill not in Open state.")
@@ -278,10 +278,10 @@ class Bill(models.Model):
         self.html = self.render(payment=payment)
         self.save()
         return transaction
-    
+
     def get_billing_contact_emails(self):
         return self.account.get_contacts_emails(usages=(Contact.BILLING,))
-    
+
     def send(self):
         pdf = self.as_pdf()
         self.account.send_email(
@@ -298,7 +298,7 @@ class Bill(models.Model):
         )
         self.is_sent = True
         self.save(update_fields=['is_sent'])
-    
+
     def render(self, payment=False, language=None):
         with translation.override(language or self.account.language):
             if payment is False:
@@ -325,22 +325,22 @@ class Bill(models.Model):
             html = bill_template.render(context)
             html = html.replace('-pageskip-', '<pdf:nextpage />')
         return html
-    
+
     def as_pdf(self):
         html = self.html or self.render()
         return html_to_pdf(html, pagination=self.has_multiple_pages)
-    
+
     def updated(self):
         self.updated_on = timezone.now()
         self.save(update_fields=('updated_on',))
-    
+
     def save(self, *args, **kwargs):
         if not self.type:
             self.type = self.get_type()
         if not self.number:
             self.number = self.get_number()
         super(Bill, self).save(*args, **kwargs)
-    
+
     @cached
     def compute_subtotals(self):
         subtotals = {}
@@ -354,21 +354,21 @@ class Bill(models.Model):
         for tax, subtotal in subtotals.items():
             result[tax] = [subtotal, round(tax/100*subtotal, 2)]
         return result
-    
+
     @cached
     def compute_base(self):
         bases = self.lines.annotate(
             bases=F('subtotal') + Sum(Coalesce('sublines__total', 0))
         )
         return round(bases.aggregate(Sum('bases'))['bases__sum'] or 0, 2)
-    
+
     @cached
     def compute_tax(self):
         taxes = self.lines.annotate(
             taxes=(F('subtotal') + Coalesce(Sum('sublines__total'), 0)) * (F('tax')/100)
         )
         return round(taxes.aggregate(Sum('taxes'))['taxes__sum'] or 0, 2)
-    
+
     @cached
     def compute_total(self):
         if 'lines' in getattr(self, '_prefetched_objects_cache', ()):
@@ -416,7 +416,7 @@ class ProForma(Bill):
 
 class BillLine(models.Model):
     """ Base model for bill item representation """
-    bill = models.ForeignKey(Bill, verbose_name=_("bill"), related_name='lines')
+    bill = models.ForeignKey(Bill, verbose_name=_("bill"), related_name='lines', on_delete=models.CASCADE)
     description = models.CharField(_("description"), max_length=256)
     rate = models.DecimalField(_("rate"), blank=True, null=True, max_digits=12, decimal_places=2)
     quantity = models.DecimalField(_("quantity"), blank=True, null=True, max_digits=12,
@@ -434,24 +434,24 @@ class BillLine(models.Model):
     created_on = models.DateField(_("created"), auto_now_add=True)
     # Amendment
     amended_line = models.ForeignKey('self', verbose_name=_("amended line"),
-        related_name='amendment_lines', null=True, blank=True)
-    
+        related_name='amendment_lines', null=True, blank=True, on_delete=models.CASCADE)
+
     class Meta:
         get_latest_by = 'id'
-    
+
     def __str__(self):
         return "#%i" % self.pk if self.pk else self.description
-    
+
     def get_verbose_quantity(self):
         return self.verbose_quantity or self.quantity
-    
+
     def clean(self):
         if not self.verbose_quantity:
             quantity = str(self.quantity)
             # Strip trailing zeros
             if quantity.endswith('0'):
                 self.verbose_quantity = quantity.strip('0').strip('.')
-    
+
     def get_verbose_period(self):
         from django.template.defaultfilters import date
         date_format = "N 'y"
@@ -467,7 +467,7 @@ class BillLine(models.Model):
         if ini == end:
             return ini
         return "{ini} / {end}".format(ini=ini, end=end)
-    
+
     @cached
     def compute_total(self):
         total = self.subtotal or 0
@@ -478,7 +478,7 @@ class BillLine(models.Model):
         else:
             total += self.sublines.aggregate(sub_total=Sum('total'))['sub_total'] or 0
         return round(total, 2)
-    
+
     def get_absolute_url(self):
         return change_url(self)
 
@@ -493,12 +493,12 @@ class BillSubline(models.Model):
         (COMPENSATION, _("Compensation")),
         (OTHER, _("Other")),
     )
-    
+
     # TODO: order info for undoing
-    line = models.ForeignKey(BillLine, verbose_name=_("bill line"), related_name='sublines')
+    line = models.ForeignKey(BillLine, verbose_name=_("bill line"), related_name='sublines', on_delete=models.CASCADE)
     description = models.CharField(_("description"), max_length=256)
     total = models.DecimalField(max_digits=12, decimal_places=2)
     type = models.CharField(_("type"), max_length=16, choices=TYPES, default=OTHER)
-    
+
     def __str__(self):
         return "%s %i" % (self.description, self.total)

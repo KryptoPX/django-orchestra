@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.admin import helpers
 from django.contrib.admin.utils import NestedObjects, quote
 from django.contrib.auth import get_permission_codename
-from django.core.urlresolvers import reverse, NoReverseMatch
+from django.urls import reverse, NoReverseMatch
 from django.db import router
 from django.shortcuts import redirect, render
 from django.template.response import TemplateResponse
@@ -53,14 +53,14 @@ def service_report(modeladmin, request, queryset):
             fields.append((model, name))
     fields = sorted(fields, key=lambda f: f[0]._meta.verbose_name_plural.lower())
     fields = [field for model, field in fields]
-    
+
     for account in queryset.prefetch_related(*fields):
         items = []
         for field in fields:
             related_manager = getattr(account, field)
             items.append((related_manager.model._meta, related_manager.all()))
         accounts.append((account, items))
-    
+
     context = {
         'accounts': accounts,
         'date': timezone.now().today()
@@ -71,21 +71,21 @@ def service_report(modeladmin, request, queryset):
 def delete_related_services(modeladmin, request, queryset):
     opts = modeladmin.model._meta
     app_label = opts.app_label
-    
+
     using = router.db_for_write(modeladmin.model)
     collector = NestedObjects(using=using)
     collector.collect(queryset)
     registered_services = services.get()
     related_services = []
     to_delete = []
-    
+
     admin_site = modeladmin.admin_site
-    
+
     def format(obj, account=False):
         has_admin = obj.__class__ in admin_site._registry
         opts = obj._meta
         no_edit_link = '%s: %s' % (capfirst(opts.verbose_name), force_text(obj))
-        
+
         if has_admin:
             try:
                 admin_url = reverse(
@@ -95,7 +95,7 @@ def delete_related_services(modeladmin, request, queryset):
             except NoReverseMatch:
                 # Change url doesn't exist -- don't display link to edit
                 return no_edit_link
-            
+
             # Display a link to the admin page.
             context = (capfirst(opts.verbose_name), admin_url, obj)
             if account:
@@ -106,7 +106,7 @@ def delete_related_services(modeladmin, request, queryset):
             # Don't display link to edit, because it either has no
             # admin or is edited inline.
             return no_edit_link
-    
+
     def format_nested(objs, result):
         if isinstance(objs, list):
             current = []
@@ -115,7 +115,7 @@ def delete_related_services(modeladmin, request, queryset):
             result.append(current)
         else:
             result.append(format(objs))
-    
+
     for nested in collector.nested():
         if isinstance(nested, list):
             # Is lists of objects
@@ -141,7 +141,7 @@ def delete_related_services(modeladmin, request, queryset):
             # Prevent the deletion of the main system user, which will delete the account
             main_systemuser = nested.main_systemuser
             related_services.append(format(nested, account=True))
-    
+
     # The user has already confirmed the deletion.
     # Do the deletion and return a None to display the change list view again.
     if request.POST.get('post'):
@@ -165,17 +165,17 @@ def delete_related_services(modeladmin, request, queryset):
             modeladmin.message_user(request, msg, messages.SUCCESS)
         # Return None to display the change list page again.
         return None
-    
+
     if len(queryset) == 1:
         objects_name = force_text(opts.verbose_name)
     else:
         objects_name = force_text(opts.verbose_name_plural)
-    
+
     model_count = {}
     for model, objs in collector.model_objs.items():
         count = 0
         # discount main systemuser
-        if model is modeladmin.model.main_systemuser.field.rel.to:
+        if model is modeladmin.model.main_systemuser.field.model:
             count = len(objs) - 1
         # Discount account
         elif model is not modeladmin.model and model in registered_services:
@@ -220,10 +220,10 @@ def disable_selected(modeladmin, request, queryset, disable=True):
             n)
         )
         return None
-    
+
     user = request.user
     admin_site = modeladmin.admin_site
-    
+
     def format(obj):
         has_admin = obj.__class__ in admin_site._registry
         opts = obj._meta
@@ -238,7 +238,7 @@ def disable_selected(modeladmin, request, queryset, disable=True):
             except NoReverseMatch:
                 # Change url doesn't exist -- don't display link to edit
                 return no_edit_link
-            
+
             p = '%s.%s' % (opts.app_label, get_permission_codename('delete', opts))
             if not user.has_perm(p):
                 perms_needed.add(opts.verbose_name)
@@ -249,19 +249,19 @@ def disable_selected(modeladmin, request, queryset, disable=True):
             # Don't display link to edit, because it either has no
             # admin or is edited inline.
             return no_edit_link
-    
+
     display = []
     for account in queryset:
         current = []
         for related in account.get_services_to_disable():
             current.append(format(related))
         display.append([format(account), current])
-    
+
     if len(queryset) == 1:
         objects_name = force_text(opts.verbose_name)
     else:
         objects_name = force_text(opts.verbose_name_plural)
-    
+
     context = dict(
         admin_site.each_context(request),
         action_name='disable_selected' if disable else 'enable_selected',

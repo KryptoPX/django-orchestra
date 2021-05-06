@@ -23,11 +23,11 @@ def is_due(task, time=None):
     )
 
 
-def run_task(task, thread=True, process=False, async=False):
+def run_task(task, thread=True, process=False, run_async=False):
     args = json.loads(task.args)
     kwargs = json.loads(task.kwargs)
     task_fn = current_app.tasks.get(task.task)
-    if async:
+    if run_async:
         method = 'process' if process else 'thread'
         return apply_async(task_fn, method=method).apply_async(*args, **kwargs)
     return task_fn(*args, **kwargs)
@@ -38,6 +38,6 @@ def run():
     procs = []
     for task in PeriodicTask.objects.enabled().select_related('crontab'):
         if is_due(task, now):
-            proc = run_task(task, process=True, async=True)
+            proc = run_task(task, process=True, run_async=True)
             procs.append(proc)
     [proc.join() for proc in procs]

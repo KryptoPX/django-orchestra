@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib import admin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.encoding import force_text
 from django.utils.translation import ugettext, ugettext_lazy as _
 
@@ -21,16 +21,16 @@ from .types import AppType
 class WebAppOptionInline(admin.TabularInline):
     model = WebAppOption
     extra = 1
-    
+
     OPTIONS_HELP_TEXT = {
         op.name: force_text(op.help_text) for op in AppOption.get_plugins()
     }
-    
+
     class Media:
         css = {
             'all': ('orchestra/css/hide-inline-id.css',)
         }
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         if db_field.name == 'value':
             kwargs['widget'] = forms.TextInput(attrs={'size':'100'})
@@ -63,9 +63,9 @@ class WebAppAdmin(SelectPluginAdminMixin, AccountAdminMixin, ExtendedModelAdmin)
     plugin_field = 'type'
     plugin_title = _("Web application type")
     actions = (list_accounts,)
-    
+
     display_type = display_plugin_field('type')
-    
+
     def display_websites(self, webapp):
         websites = []
         for content in webapp.content_set.all():
@@ -83,7 +83,7 @@ class WebAppAdmin(SelectPluginAdminMixin, AccountAdminMixin, ExtendedModelAdmin)
         return '<br>'.join(websites)
     display_websites.short_description = _("web sites")
     display_websites.allow_tags = True
-    
+
     def display_detail(self, webapp):
         try:
             return webapp.type_instance.get_detail()
@@ -91,11 +91,11 @@ class WebAppAdmin(SelectPluginAdminMixin, AccountAdminMixin, ExtendedModelAdmin)
             return "<span style='color:red;'>Not available</span>"
     display_detail.short_description = _("detail")
     display_detail.allow_tags = True
-    
+
 #    def get_form(self, request, obj=None, **kwargs):
 #        form = super(WebAppAdmin, self).get_form(request, obj, **kwargs)
 #        if obj:
-#            
+#
 
 #    def formfield_for_dbfield(self, db_field, **kwargs):
 #        """ Make value input widget bigger """

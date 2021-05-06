@@ -65,7 +65,7 @@ def _standardize(rates):
 
 
 def step_price(rates, metric):
-    if rates.query.order_by != ['plan', 'quantity']:
+    if rates.query.order_by != ('plan', 'quantity'):
         raise ValueError("rates queryset should be ordered by 'plan' and 'quantity'")
     # Step price
     group = []
@@ -127,7 +127,7 @@ step_price.help_text = _("All rates with a quantity lower or equal than the metr
 
 
 def match_price(rates, metric):
-    if rates.query.order_by != ['plan', 'quantity']:
+    if rates.query.order_by != ('plan', 'quantity'):
         raise ValueError("rates queryset should be ordered by 'plan' and 'quantity'")
     candidates = []
     selected = False
@@ -159,7 +159,7 @@ match_price.help_text = _("Only <b>the rate</b> with a) inmediate inferior metri
 
 
 def best_price(rates, metric):
-    if rates.query.order_by != ['plan', 'quantity']:
+    if rates.query.order_by != ('plan', 'quantity'):
         raise ValueError("rates queryset should be ordered by 'plan' and 'quantity'")
     candidates = []
     for plan, rates in rates.group_by('plan').items():

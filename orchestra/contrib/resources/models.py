@@ -26,7 +26,7 @@ class Resource(models.Model):
     Defines a resource, a resource is basically an interpretation of data
     gathered by a Monitor
     """
-    
+
     LAST = 'LAST'
     MONTHLY_SUM = 'MONTHLY_SUM'
     MONTHLY_AVG = 'MONTHLY_AVG'
@@ -36,13 +36,13 @@ class Resource(models.Model):
         (MONTHLY_AVG, _("Monthly avg")),
     )
     _related = set() # keeps track of related models for resource cleanup
-    
+
     name = models.CharField(_("name"), max_length=32,
         help_text=_("Required. 32 characters or fewer. Lowercase letters, "
                     "digits and hyphen only."),
         validators=[validators.validate_name])
     verbose_name = models.CharField(_("verbose name"), max_length=256)
-    content_type = models.ForeignKey(ContentType,
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
         help_text=_("Model where this resource will be hooked."))
     aggregation = models.CharField(_("aggregation"), max_length=16,
         choices=Aggregation.get_choices(), default=Aggregation.get_choices()[0][0],
@@ -70,27 +70,27 @@ class Resource(models.Model):
         choices=ServiceMonitor.get_choices(),
         help_text=_("Monitor backends used for monitoring this resource."))
     is_active = models.BooleanField(_("active"), default=True)
-    
+
     objects = ResourceQuerySet.as_manager()
-    
+
     class Meta:
         unique_together = (
             ('name', 'content_type'),
             ('verbose_name', 'content_type')
         )
-    
+
     def __str__(self):
         return "%s-%s" % (self.content_type, self.name)
-    
+
     @cached_property
     def aggregation_class(self):
         return Aggregation.get(self.aggregation)
-    
+
     @cached_property
     def aggregation_instance(self):
         """ Per request lived type_instance """
         return self.aggregation_class(self)
-    
+
     def clean(self):
         self.verbose_name = self.verbose_name.strip()
         if self.on_demand and self.default_allocation:
@@ -114,12 +114,12 @@ class Resource(models.Model):
                         model_name,
                     ) for error in monitor_errors
                 ]})
-    
+
     def save(self, *args, **kwargs):
         super(Resource, self).save(*args, **kwargs)
         # This only works on tests (multiprocessing used on real deployments)
         apps.get_app_config('resources').reload_relations()
-    
+
     def sync_periodic_task(self, delete=False):
         """ sync periodic task on save/delete resource operations """
         name = 'monitor.%s' % self
@@ -140,21 +140,21 @@ class Resource(models.Model):
                 if task.crontab != self.crontab:
                     task.crontab = self.crontab
                     task.save(update_fields=['crontab'])
-    
+
     def get_model_path(self, monitor):
         """ returns a model path between self.content_type and monitor.model """
         resource_model = self.content_type.model_class()
         monitor_model = ServiceMonitor.get_backend(monitor).model_class()
         return get_model_field_path(monitor_model, resource_model)
-    
+
     def get_scale(self):
         return eval(self.scale)
-    
+
     def get_verbose_name(self):
         return self.verbose_name or self.name
-    
-    def monitor(self, async=True):
-        if async:
+
+    def monitor(self, run_async=True):
+        if run_async:
             return tasks.monitor.apply_async(self.pk)
         return tasks.monitor(self.pk)
 
@@ -178,8 +178,8 @@ class ResourceDataQuerySet(models.QuerySet):
 
 class ResourceData(models.Model):
     """ Stores computed resource usage and allocation """
-    resource = models.ForeignKey(Resource, related_name='dataset', verbose_name=_("resource"))
-    content_type = models.ForeignKey(ContentType, verbose_name=_("content type"))
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name='dataset', verbose_name=_("resource"))
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name=_("content type"))
     object_id = models.PositiveIntegerField(_("object id"))
     used = models.DecimalField(_("used"), max_digits=16, decimal_places=3, null=True,
         editable=False)
@@ -187,28 +187,28 @@ class ResourceData(models.Model):
     allocated = models.PositiveIntegerField(_("allocated"), null=True, blank=True)
     content_object_repr = models.CharField(_("content object representation"), max_length=256,
         editable=False)
-    
+
     content_object = GenericForeignKey()
     objects = ResourceDataQuerySet.as_manager()
-    
+
     class Meta:
         unique_together = ('resource', 'content_type', 'object_id')
         verbose_name_plural = _("resource data")
         index_together = (
             ('content_type', 'object_id'),
         )
-    
+
     def __str__(self):
         return "%s: %s" % (self.resource, self.content_object)
-    
+
     @property
     def unit(self):
         return self.resource.unit
-    
+
     @property
     def verbose_name(self):
         return self.resource.verbose_name
-    
+
     def get_used(self):
         resource = self.resource
         total = 0
@@ -220,7 +220,7 @@ class ResourceData(models.Model):
                 has_result = True
                 total += usage
         return float(total)/resource.get_scale() if has_result else None
-    
+
     def update(self, current=None):
         if current is None:
             current = self.get_used()
@@ -228,13 +228,13 @@ class ResourceData(models.Model):
         self.updated_at = timezone.now()
         self.content_object_repr = str(self.content_object)
         self.save(update_fields=('used', 'updated_at', 'content_object_repr'))
-    
-    def monitor(self, async=False):
+
+    def monitor(self, run_async=False):
         ids = (self.object_id,)
-        if async:
+        if run_async:
             return tasks.monitor.delay(self.resource_id, ids=ids)
         return tasks.monitor(self.resource_id, ids=ids)
-    
+
     def get_monitor_datasets(self):
         resource = self.resource
         for monitor in resource.monitors:
@@ -267,7 +267,7 @@ class MonitorData(models.Model):
     """ Stores monitored data """
     monitor = models.CharField(_("monitor"), max_length=256, db_index=True,
         choices=ServiceMonitor.get_choices())
-    content_type = models.ForeignKey(ContentType, verbose_name=_("content type"))
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name=_("content type"))
     object_id = models.PositiveIntegerField(_("object id"))
     created_at = models.DateTimeField(_("created"), default=timezone.now, db_index=True)
     value = models.DecimalField(_("value"), max_digits=16, decimal_places=2)
@@ -275,20 +275,20 @@ class MonitorData(models.Model):
         help_text=_("Optional field used to store current state needed for diff-based monitoring."))
     content_object_repr = models.CharField(_("content object representation"), max_length=256,
         editable=False)
-    
+
     content_object = GenericForeignKey()
     objects = MonitorDataQuerySet.as_manager()
-    
+
     class Meta:
         get_latest_by = 'id'
         verbose_name_plural = _("monitor data")
         index_together = (
             ('content_type', 'object_id'),
         )
-    
+
     def __str__(self):
         return str(self.monitor)
-    
+
     @cached_property
     def unit(self):
         return self.resource.unit
@@ -324,15 +324,15 @@ def create_resource_relation():
                 )
             self.obj.__resource_cache[attr] = rdata
             return rdata
-        
+
         def __get__(self, obj, cls):
             """ proxy handled object """
             self.obj = obj
             return self
-        
+
         def __iter__(self):
             return iter(self.obj.resource_set.all())
-    
+
     # Clean previous state
     for related in Resource._related:
         try:
@@ -342,9 +342,9 @@ def create_resource_relation():
             pass
         else:
             related._meta.private_fields = [
-                field for field in related._meta.private_fields if field.rel.to != ResourceData
+                field for field in related._meta.private_fields if field.remote_field.model != ResourceData
             ]
-    
+
     for ct, resources in Resource.objects.group_by('content_type').items():
         model = ct.model_class()
         relation = GenericRelation('resources.ResourceData')

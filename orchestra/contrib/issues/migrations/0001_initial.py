@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import django.db.models.deletion
 from django.db import models, migrations
 import orchestra.models.fields
 from django.conf import settings
@@ -20,7 +21,7 @@ class Migration(migrations.Migration):
                 ('author_name', models.CharField(blank=True, max_length=256, verbose_name='author name')),
                 ('content', models.TextField(verbose_name='content')),
                 ('created_on', models.DateTimeField(auto_now_add=True, verbose_name='created on')),
-                ('author', models.ForeignKey(related_name='ticket_messages', to=settings.AUTH_USER_MODEL, verbose_name='author')),
+                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='ticket_messages', to=settings.AUTH_USER_MODEL, verbose_name='author')),
             ],
             options={
                 'get_latest_by': 'id',
@@ -48,9 +49,9 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='created')),
                 ('updated_at', models.DateTimeField(auto_now=True, verbose_name='modified')),
                 ('cc', models.TextField(blank=True, help_text='emails to send a carbon copy to', verbose_name='CC')),
-                ('creator', models.ForeignKey(related_name='tickets_created', null=True, to=settings.AUTH_USER_MODEL, verbose_name='created by')),
-                ('owner', models.ForeignKey(blank=True, related_name='tickets_owned', null=True, to=settings.AUTH_USER_MODEL, verbose_name='assigned to')),
-                ('queue', models.ForeignKey(blank=True, related_name='tickets', null=True, to='issues.Queue')),
+                ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tickets_created', null=True, to=settings.AUTH_USER_MODEL, verbose_name='created by')),
+                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, blank=True, related_name='tickets_owned', null=True, to=settings.AUTH_USER_MODEL, verbose_name='assigned to')),
+                ('queue', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, blank=True, related_name='tickets', null=True, to='issues.Queue')),
             ],
             options={
                 'ordering': ['-updated_at'],
@@ -60,14 +61,14 @@ class Migration(migrations.Migration):
             name='TicketTracker',
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False, auto_created=True, verbose_name='ID')),
-                ('ticket', models.ForeignKey(related_name='trackers', to='issues.Ticket', verbose_name='ticket')),
-                ('user', models.ForeignKey(related_name='ticket_trackers', to=settings.AUTH_USER_MODEL, verbose_name='user')),
+                ('ticket', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='trackers', to='issues.Ticket', verbose_name='ticket')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='ticket_trackers', to=settings.AUTH_USER_MODEL, verbose_name='user')),
             ],
         ),
         migrations.AddField(
             model_name='message',
             name='ticket',
-            field=models.ForeignKey(related_name='messages', to='issues.Ticket', verbose_name='ticket'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='messages', to='issues.Ticket', verbose_name='ticket'),
         ),
         migrations.AlterUniqueTogether(
             name='tickettracker',

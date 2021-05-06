@@ -14,7 +14,7 @@ api.autodiscover()
 
 urlpatterns = [
     # Admin
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
     url(r'^admin_tools/', include('admin_tools.urls')),
     # REST API
     url(r'^api/', include(api.router.urls)),

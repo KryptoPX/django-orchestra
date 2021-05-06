@@ -29,7 +29,7 @@ class Account(auth.AbstractBaseUser):
             validators.RegexValidator(r'^[\w.-]+$', _("Enter a valid username."), 'invalid')
         ])
     main_systemuser = models.ForeignKey(settings.ACCOUNTS_SYSTEMUSER_MODEL, null=True,
-        related_name='accounts_main', editable=False)
+        related_name='accounts_main', editable=False, on_delete=models.SET_NULL)
     short_name = models.CharField(_("short name"), max_length=64, blank=True)
     full_name = models.CharField(_("full name"), max_length=256)
     email = models.EmailField(_('email address'), help_text=_("Used for password recovery"))
@@ -46,23 +46,28 @@ class Account(auth.AbstractBaseUser):
         help_text=_("Designates whether this account should be treated as active. "
                     "Unselect this instead of deleting accounts."))
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
-    
+
     objects = AccountManager()
-    
+
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
-    
+
+    def __init__(self, *args, **kwargs):
+        # ignore `is_staff` kwarg because is handled with `is_superuser`
+        kwargs.pop('is_staff', None)
+        super().__init__(*args, **kwargs)
+
     def __str__(self):
         return self.name
-    
+
     @property
     def name(self):
         return self.username
-    
+
     @property
     def is_staff(self):
         return self.is_superuser
-    
+
     def save(self, active_systemuser=False, *args, **kwargs):
         created = not self.pk
         if not created:
@@ -75,21 +80,21 @@ class Account(auth.AbstractBaseUser):
             self.save(update_fields=('main_systemuser',))
         elif was_active != self.is_active:
             self.notify_related()
-    
+
     def clean(self):
         self.short_name = self.short_name.strip()
         self.full_name = self.full_name.strip()
-    
+
     def disable(self):
         self.is_active = False
         self.save(update_fields=('is_active',))
         self.notify_related()
-    
+
     def enable(self):
         self.is_active = True
         self.save(update_fields=('is_active',))
         self.notify_related()
-    
+
     def get_services_to_disable(self):
         related_fields = [
             f for f in self._meta.get_fields()
@@ -101,20 +106,20 @@ class Account(auth.AbstractBaseUser):
             if source in core.services and hasattr(source, 'active'):
                 for obj in getattr(self, rel.get_accessor_name()).all():
                     yield obj
-    
+
     def notify_related(self):
         """ Trigger save() on related objects that depend on this account """
         for obj in self.get_services_to_disable():
             signals.pre_save.send(sender=type(obj), instance=obj)
             signals.post_save.send(sender=type(obj), instance=obj)
 #            OperationsMiddleware.collect(Operation.SAVE, instance=obj, update_fields=())
-    
+
     def get_contacts_emails(self, usages=None):
         contacts = self.contacts.all()
         if usages is not None:
             contactes = contacts.filter(email_usages=usages)
         return contacts.values_list('email', flat=True)
-    
+
     def send_email(self, template, context, email_from=None, usages=None, attachments=[], html=None):
         contacts = self.contacts.filter(email_usages=usages)
         email_to = self.get_contacts_emails(usages)
@@ -126,14 +131,14 @@ class Account(auth.AbstractBaseUser):
         with translation.override(self.language):
             send_email_template(template, extra_context, email_to, email_from=email_from,
                 html=html, attachments=attachments)
-    
+
     def get_full_name(self):
         return self.full_name or self.short_name or self.username
-    
+
     def get_short_name(self):
         """ Returns the short name for the user """
         return self.short_name or self.username or self.full_name
-    
+
     def has_perm(self, perm, obj=None):
         """
         Returns True if the user has the specified permission. This method
@@ -160,7 +165,7 @@ class Account(auth.AbstractBaseUser):
             elif obj and getattr(obj, 'account', None) == self:
                 return True
 
-    
+
     def has_perms(self, perm_list, obj=None):
         """
         Returns True if the user has each of the specified permissions. If
@@ -171,7 +176,7 @@ class Account(auth.AbstractBaseUser):
             if not self.has_perm(perm, obj):
                 return False
         return True
-    
+
     def has_module_perms(self, app_label):
         """
         Returns True if the user has any permissions in the given app label.

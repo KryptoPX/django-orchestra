@@ -1,7 +1,7 @@
 from django import forms
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -25,7 +25,7 @@ class PHPListForm(SaaSPasswordForm):
         help_text=_("Dedicated mailbox used for reciving bounces."),
         widget=SpanWidget(display=settings.SAAS_PHPLIST_BOUNCES_MAILBOX_NAME.replace(
             '%(', '&lt;').replace(')s', '&gt;')))
-    
+
     def __init__(self, *args, **kwargs):
         super(PHPListForm, self).__init__(*args, **kwargs)
         self.fields['name'].label = _("Site name")
@@ -76,14 +76,14 @@ class PHPListService(DBSoftwareService):
     allow_custom_url = settings.SAAS_PHPLIST_ALLOW_CUSTOM_URL
     db_name = settings.SAAS_PHPLIST_DB_NAME
     db_user = settings.SAAS_PHPLIST_DB_USER
-    
+
     def get_mailbox_name(self):
         context = {
             'name': self.instance.name,
             'site_name': self.instance.name,
         }
         return settings.SAAS_PHPLIST_BOUNCES_MAILBOX_NAME % context
-    
+
     def validate(self):
         super(PHPListService, self).validate()
         create = not self.instance.pk
@@ -97,7 +97,7 @@ class PHPListService(DBSoftwareService):
                 raise ValidationError({
                     'name': e.messages,
                 })
-    
+
     def save(self):
         super(PHPListService, self).save()
         account = self.get_account()
@@ -111,7 +111,7 @@ class PHPListService(DBSoftwareService):
                 'mailbox_id': mailbox.pk,
                 'mailbox_name': mailbox_name,
             })
-    
+
     def delete(self):
         super(PHPListService, self).save()
         account = self.get_account()

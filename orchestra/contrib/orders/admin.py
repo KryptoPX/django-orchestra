@@ -1,13 +1,13 @@
 from django import forms
 from django.contrib import admin
-from django.core.urlresolvers import reverse, NoReverseMatch
+from django.urls import reverse, NoReverseMatch
 from django.db.models import Prefetch
 from django.utils import timezone
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
-from orchestra.admin import ExtendedModelAdmin 
+from orchestra.admin import ExtendedModelAdmin
 from orchestra.admin.utils import admin_link, admin_date, change_url
 from orchestra.contrib.accounts.actions import list_accounts
 from orchestra.contrib.accounts.admin import AccountAdminMixin
@@ -22,10 +22,10 @@ class MetricStorageInline(admin.TabularInline):
     model = MetricStorage
     readonly_fields = ('value', 'created_on', 'updated_on')
     extra = 0
-    
+
     def has_add_permission(self, request, obj=None):
         return False
-    
+
     def get_fieldsets(self, request, obj=None):
         if obj:
              url = reverse('admin:orders_metricstorage_changelist')
@@ -33,7 +33,7 @@ class MetricStorageInline(admin.TabularInline):
              title = _('Metric storage, last 10 entries, <a href="%s">(See all)</a>')
              self.verbose_name_plural = mark_safe(title % url)
         return super(MetricStorageInline, self).get_fieldsets(request, obj)
-    
+
     def get_queryset(self, request):
         qs = super(MetricStorageInline, self).get_queryset(request)
         change_view = bool(self.parent_object and self.parent_object.pk)
@@ -106,17 +106,17 @@ class OrderAdmin(AccountAdminMixin, ExtendedModelAdmin):
         'content_object_repr', 'content_object_link', 'bills_links', 'account_link',
         'service_link'
     )
-    
+
     service_link = admin_link('service')
     display_registered_on = admin_date('registered_on')
     display_cancelled_on = admin_date('cancelled_on')
-    
+
     def display_description(self, order):
         return order.description[:64]
     display_description.short_description = _("Description")
     display_description.allow_tags = True
     display_description.admin_order_field = 'description'
-    
+
     def content_object_link(self, order):
         if order.content_object:
             try:
@@ -131,7 +131,7 @@ class OrderAdmin(AccountAdminMixin, ExtendedModelAdmin):
     content_object_link.short_description = _("Content object")
     content_object_link.allow_tags = True
     content_object_link.admin_order_field = 'content_object_repr'
-    
+
     def bills_links(self, order):
         bills = []
         make_link = admin_link()
@@ -140,7 +140,7 @@ class OrderAdmin(AccountAdminMixin, ExtendedModelAdmin):
         return '<br>'.join(bills)
     bills_links.short_description = _("Bills")
     bills_links.allow_tags = True
-    
+
     def display_billed_until(self, order):
         billed_until = order.billed_until
         red = False
@@ -163,7 +163,7 @@ class OrderAdmin(AccountAdminMixin, ExtendedModelAdmin):
     display_billed_until.short_description = _("billed until")
     display_billed_until.allow_tags = True
     display_billed_until.admin_order_field = 'billed_until'
-    
+
     def display_metric(self, order):
         """
         dispalys latest metric value, don't uses latest() because not loosing prefetch_related
@@ -174,7 +174,7 @@ class OrderAdmin(AccountAdminMixin, ExtendedModelAdmin):
             return ''
         return metric.value
     display_metric.short_description = _("Metric")
-    
+
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ Make value input widget bigger """
         if db_field.name == 'description':

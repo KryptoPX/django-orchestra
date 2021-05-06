@@ -4,7 +4,7 @@ import re
 
 from django import template
 from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import reverse, NoReverseMatch
+from django.urls import reverse, NoReverseMatch
 from django.forms import CheckboxInput
 from django.template.base import Node
 from django.template.defaultfilters import date
@@ -54,7 +54,7 @@ def rest_to_admin_url(context):
 class OneLinerNode(Node):
     def __init__(self, nodelist):
         self.nodelist = nodelist
-    
+
     def render(self, context):
         line = self.nodelist.render(context).replace('\n', ' ')
         return re.sub(r'\s\s+', '', line)

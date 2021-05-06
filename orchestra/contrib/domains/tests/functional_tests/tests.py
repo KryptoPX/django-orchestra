@@ -4,7 +4,7 @@ import socket
 from functools import partial
 
 from django.conf import settings as djsettings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from selenium.webdriver.support.select import Select
 
 from orchestra.contrib.orchestration.models import Server, Route
@@ -23,7 +23,7 @@ class DomainTestMixin(object):
     SLAVE_SERVER = os.environ.get('ORCHESTRA_SLAVE_SERVER', 'localhost')
     MASTER_SERVER_ADDR = socket.gethostbyname(MASTER_SERVER)
     SLAVE_SERVER_ADDR = socket.gethostbyname(SLAVE_SERVER)
-    
+
     def setUp(self):
         djsettings.DEBUG = True
         super(DomainTestMixin, self).setUp()
@@ -53,19 +53,19 @@ class DomainTestMixin(object):
             (Record.CNAME, 'external.server.org.'),
         )
         self.django_domain_name = 'django%s.lan' % random_ascii(10)
-    
+
     def add_route(self):
         raise NotImplementedError
-    
+
     def add(self, domain_name, records):
         raise NotImplementedError
-    
+
     def delete(self, domain_name, records):
         raise NotImplementedError
-    
+
     def update(self, domain_name, records):
         raise NotImplementedError
-    
+
     def validate_add(self, server_addr, domain_name):
         context = {
             'domain_name': domain_name,
@@ -81,7 +81,7 @@ class DomainTestMixin(object):
         self.assertEqual('%s.' % settings.DOMAINS_DEFAULT_NAME_SERVER, soa[4])
         hostmaster = utils.format_hostmaster(settings.DOMAINS_DEFAULT_HOSTMASTER)
         self.assertEqual(hostmaster, soa[5])
-        
+
         dig_ns = 'dig @%(server_addr)s %(domain_name)s NS|grep "\sNS\s"'
         name_servers = run(dig_ns % context).stdout
         # testdomain.org. 3600 IN NS ns1.orchestra.lan.
@@ -95,7 +95,7 @@ class DomainTestMixin(object):
             self.assertEqual('IN', ns[2])
             self.assertEqual('NS', ns[3])
             self.assertIn(ns[4], ns_records)
-        
+
         dig_mx = 'dig @%(server_addr)s %(domain_name)s MX|grep "\sMX\s"'
         mail_servers = run(dig_mx % context).stdout
         for mx in mail_servers.splitlines():
@@ -107,7 +107,7 @@ class DomainTestMixin(object):
             self.assertEqual('MX', mx[3])
             self.assertIn(mx[4], ['10', '20'])
             self.assertIn(mx[5], ['mail2.orchestra.lan.', 'mail.orchestra.lan.'])
-    
+
     def validate_delete(self, server_addr, domain_name):
         context = {
             'domain_name': domain_name,
@@ -122,7 +122,7 @@ class DomainTestMixin(object):
             self.assertNotEqual('%s.' % settings.DOMAINS_DEFAULT_NAME_SERVER, soa[4])
             hostmaster = utils.format_hostmaster(settings.DOMAINS_DEFAULT_HOSTMASTER)
             self.assertNotEqual(hostmaster, soa[5])
-    
+
     def validate_update(self, server_addr, domain_name):
         context = {
             'domain_name': domain_name,
@@ -138,7 +138,7 @@ class DomainTestMixin(object):
         self.assertEqual('%s.' % settings.DOMAINS_DEFAULT_NAME_SERVER, soa[4])
         hostmaster = utils.format_hostmaster(settings.DOMAINS_DEFAULT_HOSTMASTER)
         self.assertEqual(hostmaster, soa[5])
-        
+
         dig_ns = 'dig @%(server_addr)s %(domain_name)s NS  |grep "\sNS\s"'
         name_servers = run(dig_ns % context).stdout
         ns_records = ['ns1.%s.' % self.domain_name, 'ns2.%s.' % self.domain_name]
@@ -151,7 +151,7 @@ class DomainTestMixin(object):
             self.assertEqual('IN', ns[2])
             self.assertEqual('NS', ns[3])
             self.assertIn(ns[4], ns_records)
-        
+
         dig_mx = 'dig @%(server_addr)s %(domain_name)s MX | grep "\sMX\s"'
         mx = run(dig_mx % context).stdout.split()
         # testdomain.org. 3600 IN MX 10 orchestra.lan.
@@ -161,7 +161,7 @@ class DomainTestMixin(object):
         self.assertEqual('MX', mx[3])
         self.assertIn(mx[4], ['30', '40'])
         self.assertIn(mx[5], ['mail3.orchestra.lan.', 'mail4.orchestra.lan.'])
-        
+
     def validate_www_update(self, server_addr, domain_name):
         context = {
             'domain_name': domain_name,
@@ -175,7 +175,7 @@ class DomainTestMixin(object):
         self.assertEqual('IN', cname[2])
         self.assertEqual('CNAME', cname[3])
         self.assertEqual('external.server.org.', cname[4])
-    
+
     def test_add(self):
         self.add(self.ns1_name, self.ns1_records)
         self.add(self.ns2_name, self.ns2_records)
@@ -184,7 +184,7 @@ class DomainTestMixin(object):
         self.validate_add(self.MASTER_SERVER_ADDR, self.domain_name)
         time.sleep(1)
         self.validate_add(self.SLAVE_SERVER_ADDR, self.domain_name)
-    
+
     def test_delete(self):
         self.add(self.ns1_name, self.ns1_records)
         self.add(self.ns2_name, self.ns2_records)
@@ -193,7 +193,7 @@ class DomainTestMixin(object):
         for name in [self.domain_name, self.ns1_name, self.ns2_name]:
             self.validate_delete(self.MASTER_SERVER_ADDR, name)
             self.validate_delete(self.SLAVE_SERVER_ADDR, name)
-    
+
     def test_update(self):
         self.add(self.ns1_name, self.ns1_records)
         self.add(self.ns2_name, self.ns2_records)
@@ -209,7 +209,7 @@ class DomainTestMixin(object):
         self.validate_www_update(self.MASTER_SERVER_ADDR, self.domain_name)
         time.sleep(5)
         self.validate_www_update(self.SLAVE_SERVER_ADDR, self.domain_name)
-    
+
     def test_add_add_delete_delete(self):
         self.add(self.ns1_name, self.ns1_records)
         self.add(self.ns2_name, self.ns2_records)
@@ -221,7 +221,7 @@ class DomainTestMixin(object):
         self.delete(self.django_domain_name)
         self.validate_delete(self.MASTER_SERVER_ADDR, self.django_domain_name)
         self.validate_delete(self.SLAVE_SERVER_ADDR, self.django_domain_name)
-    
+
     def test_bad_creation(self):
         self.assertRaises((self.rest.ResponseStatusError, AssertionError),
                 self.add, self.domain_name, self.domain_records)
@@ -232,7 +232,7 @@ class AdminDomainMixin(DomainTestMixin):
         super(AdminDomainMixin, self).setUp()
         self.add_route()
         self.admin_login()
-    
+
     def _add_records(self, records):
         self.selenium.find_element_by_link_text('Add another Record').click()
         for i, record in zip(range(0, len(records)), records):
@@ -244,29 +244,29 @@ class AdminDomainMixin(DomainTestMixin):
             value_input.clear()
             value_input.send_keys(value)
         return value_input
-    
+
     @snapshot_on_error
     def add(self, domain_name, records):
         add = reverse('admin:domains_domain_add')
         url = self.live_server_url + add
         self.selenium.get(url)
-        
+
         name = self.selenium.find_element_by_id('id_name')
         name.send_keys(domain_name)
-        
+
         account_input = self.selenium.find_element_by_id('id_account')
         account_select = Select(account_input)
         account_select.select_by_value(str(self.account.pk))
-        
+
         value_input = self._add_records(records)
         value_input.submit()
         self.assertNotEqual(url, self.selenium.current_url)
-    
+
     @snapshot_on_error
     def delete(self, domain_name):
         domain = Domain.objects.get(name=domain_name)
         self.admin_delete(domain)
-    
+
     @snapshot_on_error
     def update(self, domain_name, records):
         domain = Domain.objects.get(name=domain_name)
@@ -283,18 +283,18 @@ class RESTDomainMixin(DomainTestMixin):
         super(RESTDomainMixin, self).setUp()
         self.rest_login()
         self.add_route()
-    
+
     @save_response_on_error
     def add(self, domain_name, records):
         records = [ dict(type=type, value=value) for type,value in records ]
         self.rest.domains.create(name=domain_name, records=records)
-    
+
     @save_response_on_error
     def delete(self, domain_name):
         domain = Domain.objects.get(name=domain_name)
         domain = self.rest.domains.retrieve(id=domain.pk)
         domain.delete()
-    
+
     @save_response_on_error
     def update(self, domain_name, records):
         records = [ dict(type=type, value=value) for type,value in records ]
@@ -307,7 +307,7 @@ class Bind9BackendMixin(object):
     DEPENDENCIES = (
         'orchestra.contrib.orchestration',
     )
-    
+
     def add_route(self):
         master = Server.objects.create(name=self.MASTER_SERVER, address=self.MASTER_SERVER_ADDR)
         backend = backends.Bind9MasterDomainController.get_name()

@@ -17,7 +17,7 @@ from . import settings
 logger = logging.getLogger(__name__)
 
 
-def Paramiko(backend, log, server, cmds, async=False, paramiko_connections={}):
+def Paramiko(backend, log, server, cmds, run_async=False, paramiko_connections={}):
     """
     Executes cmds to remote server using Pramaiko
     """
@@ -55,7 +55,7 @@ def Paramiko(backend, log, server, cmds, async=False, paramiko_connections={}):
         channel.shutdown_write()
         # Log results
         logger.debug('%s running on %s' % (backend, server))
-        if async:
+        if run_async:
             second = False
             while True:
                 # Non-blocking is the secret ingridient in the async sauce
@@ -78,7 +78,7 @@ def Paramiko(backend, log, server, cmds, async=False, paramiko_connections={}):
         else:
             log.stdout += channel.makefile('rb', -1).read().decode('utf-8')
             log.stderr += channel.makefile_stderr('rb', -1).read().decode('utf-8')
-        
+
         log.exit_code = channel.recv_exit_status()
         log.state = log.SUCCESS if log.exit_code == 0 else log.FAILURE
         logger.debug('%s execution state on %s is %s' % (backend, server, log.state))
@@ -97,7 +97,7 @@ def Paramiko(backend, log, server, cmds, async=False, paramiko_connections={}):
             channel.close()
 
 
-def OpenSSH(backend, log, server, cmds, async=False):
+def OpenSSH(backend, log, server, cmds, run_async=False):
     """
     Executes cmds to remote server using SSH with connection resuse for maximum performance
     """
@@ -110,9 +110,9 @@ def OpenSSH(backend, log, server, cmds, async=False):
         return
     try:
         ssh = sshrun(server.get_address(), script, executable=backend.script_executable,
-            persist=True, async=async, silent=True)
+            persist=True, run_async=run_async, silent=True)
         logger.debug('%s running on %s' % (backend, server))
-        if async:
+        if run_async:
             for state in ssh:
                 log.stdout += state.stdout.decode('utf8')
                 log.stderr += state.stderr.decode('utf8')
@@ -148,7 +148,7 @@ def SSH(*args, **kwargs):
     return method(*args, **kwargs)
 
 
-def Python(backend, log, server, cmds, async=False):
+def Python(backend, log, server, cmds, run_async=False):
     script = ''
     functions = set()
     for cmd in cmds:
@@ -170,7 +170,7 @@ def Python(backend, log, server, cmds, async=False):
                 log.stdout += line + '\n'
             if result:
                 log.stdout += '# Result: %s\n' % result
-            if async:
+            if run_async:
                 log.save(update_fields=('stdout', 'updated_at'))
     except:
         log.exit_code = 1

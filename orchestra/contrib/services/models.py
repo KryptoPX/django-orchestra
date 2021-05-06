@@ -53,12 +53,13 @@ class Service(models.Model):
     REFUND = 'REFUND'
     PREPAY = 'PREPAY'
     POSTPAY = 'POSTPAY'
-    
+
     _ignore_types = ' and '.join(
         ', '.join(settings.SERVICES_IGNORE_ACCOUNT_TYPE).rsplit(', ', 1)).lower()
-    
+
     description = models.CharField(_("description"), max_length=256, unique=True)
-    content_type = models.ForeignKey(ContentType, verbose_name=_("content type"),
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
+        verbose_name=_("content type"),
         help_text=_("Content type of the related service objects."))
     match = models.CharField(_("match"), max_length=256, blank=True,
         help_text=_(
@@ -168,19 +169,19 @@ class Service(models.Model):
             (POSTPAY, _("Postpay (on demand)")),
         ),
         default=PREPAY)
-    
+
     objects = ServiceQuerySet.as_manager()
-    
+
     def __str__(self):
         return self.description
-    
+
     @cached_property
     def handler(self):
         """ Accessor of this service handler instance """
         if self.handler_type:
             return ServiceHandler.get(self.handler_type)(self)
         return ServiceHandler(self)
-    
+
     def clean(self):
         self.description = self.description.strip()
         if hasattr(self, 'content_type'):
@@ -190,12 +191,12 @@ class Service(models.Model):
                 'metric': (self.handler.validate_metric, self),
                 'order_description': (self.handler.validate_order_description, self),
             })
-        
+
     def get_pricing_period(self):
         if self.pricing_period == self.BILLING_PERIOD:
             return self.billing_period
         return self.pricing_period
-    
+
     def get_price(self, account, metric, rates=None, position=None):
         """
         if position is provided an specific price for that position is returned,
@@ -233,7 +234,7 @@ class Service(models.Model):
                     price = round(rate['price'], 2)
                     return decimal.Decimal(str(rate['price']))
             raise RuntimeError("Rating algorithm bad result")
-    
+
     def get_rates(self, account, cache=True):
         # rates are cached per account
         if not cache:
@@ -246,11 +247,11 @@ class Service(models.Model):
             rates = self.rates.by_account(account)
             self.__cached_rates[account.id] = rates
             return rates
-    
+
     @property
     def rate_method(self):
         return rate_class.get_methods()[self.rate_algorithm]
-    
+
     def update_orders(self, commit=True):
         order_model = apps.get_model(settings.SERVICES_ORDER_MODEL)
         manager = order_model.objects

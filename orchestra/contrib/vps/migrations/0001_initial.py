@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import django.db.models.deletion
 import orchestra.core.validators
 from django.conf import settings
 
@@ -21,7 +22,7 @@ class Migration(migrations.Migration):
                 ('type', models.CharField(choices=[('openvz', 'OpenVZ container')], verbose_name='type', default='openvz', max_length=64)),
                 ('template', models.CharField(choices=[('debian7', 'Debian 7 - Wheezy')], verbose_name='template', default='debian7', max_length=64)),
                 ('password', models.CharField(verbose_name='password', help_text='<TT>root</TT> password of this virtual machine', max_length=128)),
-                ('account', models.ForeignKey(verbose_name='Account', related_name='vpss', to=settings.AUTH_USER_MODEL)),
+                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, verbose_name='Account', related_name='vpss', to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name': 'VPS',

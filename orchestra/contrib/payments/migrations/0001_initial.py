@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import django.db.models.deletion
 from django.db import models, migrations
 import jsonfield.fields
 from django.conf import settings
@@ -21,7 +22,7 @@ class Migration(migrations.Migration):
                 ('method', models.CharField(choices=[('CreditCard', 'Credit card'), ('SEPADirectDebit', 'SEPA Direct Debit')], verbose_name='method', max_length=32)),
                 ('data', jsonfield.fields.JSONField(verbose_name='data', default={})),
                 ('is_active', models.BooleanField(verbose_name='active', default=True)),
-                ('account', models.ForeignKey(verbose_name='account', related_name='paymentsources', to=settings.AUTH_USER_MODEL)),
+                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, verbose_name='account', related_name='paymentsources', to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
@@ -33,7 +34,7 @@ class Migration(migrations.Migration):
                 ('currency', models.CharField(max_length=10, default='Eur')),
                 ('created_at', models.DateTimeField(verbose_name='created', auto_now_add=True)),
                 ('modified_at', models.DateTimeField(verbose_name='modified', auto_now=True)),
-                ('bill', models.ForeignKey(verbose_name='bill', related_name='transactions', to='bills.Bill')),
+                ('bill', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, verbose_name='bill', related_name='transactions', to='bills.Bill')),
             ],
         ),
         migrations.CreateModel(
@@ -53,11 +54,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transaction',
             name='process',
-            field=models.ForeignKey(verbose_name='process', null=True, blank=True, related_name='transactions', to='payments.TransactionProcess'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, verbose_name='process', null=True, blank=True, related_name='transactions', to='payments.TransactionProcess'),
         ),
         migrations.AddField(
             model_name='transaction',
             name='source',
-            field=models.ForeignKey(verbose_name='source', null=True, blank=True, related_name='transactions', to='payments.PaymentSource'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, verbose_name='source', null=True, blank=True, related_name='transactions', to='payments.PaymentSource'),
         ),
     ]

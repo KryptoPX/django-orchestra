@@ -30,54 +30,54 @@ class List(models.Model):
     admin_email = models.EmailField(_("admin email"),
         help_text=_("Administration email address"))
     account = models.ForeignKey('accounts.Account', verbose_name=_("Account"),
-        related_name='lists')
+        related_name='lists', on_delete=models.CASCADE)
     # TODO also admin
     is_active = models.BooleanField(_("active"), default=True,
         help_text=_("Designates whether this account should be treated as active. "
                     "Unselect this instead of deleting accounts."))
     password = None
-    
+
     objects = ListQuerySet.as_manager()
-    
+
     class Meta:
         unique_together = ('address_name', 'address_domain')
-    
+
     def __str__(self):
         return self.name
-    
+
     @property
     def address(self):
         if self.address_name and self.address_domain:
             return "%s@%s" % (self.address_name, self.address_domain)
         return ''
-    
+
     @cached_property
     def active(self):
         return self.is_active and self.account.is_active
-    
+
     def clean(self):
         if self.address_name and not self.address_domain_id:
             raise ValidationError({
                 'address_domain': _("Domain should be selected for provided address name."),
             })
-    
+
     def disable(self):
         self.is_active = False
         self.save(update_fields=('is_active',))
-    
+
     def enable(self):
         self.is_active = False
         self.save(update_fields=('is_active',))
-    
+
     def get_address_name(self):
         return self.address_name or self.name
-    
+
     def get_username(self):
         return self.name
-    
+
     def set_password(self, password):
         self.password = password
-    
+
     def get_absolute_url(self):
         context = {
             'name': self.name

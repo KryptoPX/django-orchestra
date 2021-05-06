@@ -12,7 +12,7 @@ from orchestra.utils.sys import confirm
 
 class Command(BaseCommand):
     help = 'Runs orchestration backends.'
-    
+
     def add_arguments(self, parser):
         parser.add_argument('model', nargs='?',
             help='Label of a model to execute the orchestration.')
@@ -30,8 +30,8 @@ class Command(BaseCommand):
             help='List available baclends.')
         parser.add_argument('--dry-run', action='store_true', dest='dry', default=False,
             help='Only prints scrtipt.')
-    
-    
+
+
     def collect_operations(self, **options):
         model = options.get('model')
         backends = options.get('backends') or set()
@@ -66,7 +66,7 @@ class Command(BaseCommand):
             model = apps.get_model(*model.split('.'))
             queryset = model.objects.filter(**kwargs).order_by('id')
             querysets = [queryset]
-        
+
         operations = OrderedSet()
         route_cache = {}
         for queryset in querysets:
@@ -88,7 +88,7 @@ class Command(BaseCommand):
                     result.append(operation)
             operations = result
         return operations
-    
+
     def handle(self, *args, **options):
         list_backends = options.get('list_backends')
         if list_backends:
@@ -116,7 +116,7 @@ class Command(BaseCommand):
             if not confirm("\n\nAre your sure to execute the previous scripts on %(servers)s (yes/no)? " % context):
                 return
         if not dry:
-            logs = manager.execute(scripts, serialize=serialize, async=True)
+            logs = manager.execute(scripts, serialize=serialize, run_async=True)
             running = list(logs)
             stdout = 0
             stderr = 0

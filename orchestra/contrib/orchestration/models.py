@@ -33,22 +33,22 @@ class Server(models.Model):
     os = models.CharField(_("operative system"), max_length=32,
         choices=settings.ORCHESTRATION_OS_CHOICES,
         default=settings.ORCHESTRATION_DEFAULT_OS)
-    
+
     def __str__(self):
         return self.name or str(self.address)
-    
+
     def get_address(self):
         if self.address:
             return self.address
         return self.name
-    
+
     def get_ip(self):
         address = self.get_address()
         try:
             return validate_ip_address(address)
         except ValidationError:
             return socket.gethostbyname(self.name)
-    
+
     def clean(self):
         self.name = self.name.strip()
         self.address = self.address.strip()
@@ -75,7 +75,7 @@ class BackendLog(models.Model):
     NOTHING = 'NOTHING'
     # Special state for mocked backendlogs
     EXCEPTION = 'EXCEPTION'
-    
+
     STATES = (
         (RECEIVED, RECEIVED),
         (TIMEOUT, TIMEOUT),
@@ -87,10 +87,10 @@ class BackendLog(models.Model):
         (REVOKED, REVOKED),
         (NOTHING, NOTHING),
     )
-    
+
     backend = models.CharField(_("backend"), max_length=256)
     state = models.CharField(_("state"), max_length=16, choices=STATES, default=RECEIVED)
-    server = models.ForeignKey(Server, verbose_name=_("server"), related_name='execution_logs')
+    server = models.ForeignKey(Server, verbose_name=_("server"), related_name='execution_logs', on_delete=models.CASCADE)
     script = models.TextField(_("script"))
     stdout = models.TextField(_("stdout"))
     stderr = models.TextField(_("stderr"))
@@ -100,25 +100,25 @@ class BackendLog(models.Model):
         help_text="Celery task ID when used as execution backend")
     created_at = models.DateTimeField(_("created"), auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(_("updated"), auto_now=True)
-    
+
     class Meta:
         get_latest_by = 'id'
-    
+
     def __str__(self):
         return "%s@%s" % (self.backend, self.server)
-    
+
     @property
     def execution_time(self):
         return (self.updated_at-self.created_at).total_seconds()
-    
+
     @property
     def has_finished(self):
         return self.state not in (self.STARTED, self.RECEIVED)
-    
+
     @property
     def is_success(self):
         return self.state in (self.SUCCESS, self.NOTHING)
-    
+
     def backend_class(self):
         return ServiceBackend.get_backend(self.backend)
 
@@ -135,26 +135,26 @@ class BackendOperation(models.Model):
     """
     Encapsulates an operation, storing its related object, the action and the backend.
     """
-    log = models.ForeignKey('orchestration.BackendLog', related_name='operations')
+    log = models.ForeignKey('orchestration.BackendLog', related_name='operations', on_delete=models.CASCADE)
     backend = models.CharField(_("backend"), max_length=256)
     action = models.CharField(_("action"), max_length=64)
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True)
     instance_repr = models.CharField(_("instance representation"), max_length=256)
-    
+
     instance = GenericForeignKey('content_type', 'object_id')
     objects = BackendOperationQuerySet.as_manager()
-    
+
     class Meta:
         verbose_name = _("Operation")
         verbose_name_plural = _("Operations")
         index_together = (
             ('content_type', 'object_id'),
         )
-    
+
     def __str__(self):
         return '%s.%s(%s)' % (self.backend, self.action, self.instance or self.instance_repr)
-    
+
     @cached_property
     def backend_class(self):
         return ServiceBackend.get_backend(self.backend)
@@ -199,11 +199,11 @@ class Route(models.Model):
     """
     backend = models.CharField(_("backend"), max_length=256,
         choices=ServiceBackend.get_choices())
-    host = models.ForeignKey(Server, verbose_name=_("host"), related_name='routes')
+    host = models.ForeignKey(Server, verbose_name=_("host"), related_name='routes', on_delete=models.CASCADE)
     match = models.CharField(_("match"), max_length=256, blank=True, default='True',
         help_text=_("Python expression used for selecting the targe host, "
                     "<em>instance</em> referes to the current object."))
-    async = models.BooleanField(default=False,
+    run_async = models.BooleanField(default=False,
         help_text=_("Whether or not block the request/response cycle waitting this backend to "
                     "finish its execution. Usually you want slave servers to run asynchronously."))
     async_actions = MultiSelectField(max_length=256, blank=True,
@@ -211,19 +211,19 @@ class Route(models.Model):
 #    method = models.CharField(_("method"), max_lenght=32, choices=method_choices,
 #            default=MethodBackend.get_default())
     is_active = models.BooleanField(_("active"), default=True)
-    
+
     objects = RouteQuerySet.as_manager()
-    
+
     class Meta:
         unique_together = ('backend', 'host')
-    
+
     def __str__(self):
         return "%s@%s" % (self.backend, self.host)
-    
+
     @cached_property
     def backend_class(self):
         return ServiceBackend.get_backend(self.backend)
-    
+
     def clean(self):
         if not self.match:
             self.match = 'True'
@@ -244,10 +244,10 @@ class Route(models.Model):
             except Exception as exception:
                 name = type(exception).__name__
                 raise ValidationError(': '.join((name, str(exception))))
-    
+
     def action_is_async(self, action):
         return action in self.async_actions
-    
+
     def matches(self, instance):
         safe_locals = {
             'instance': instance,
@@ -255,11 +255,11 @@ class Route(models.Model):
             instance._meta.model_name: instance,
         }
         return eval(self.match, safe_locals)
-    
+
     def enable(self):
         self.is_active = True
         self.save()
-    
+
     def disable(self):
         self.is_active = False
         self.save()

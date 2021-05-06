@@ -27,7 +27,7 @@ class crontab_parser(object):
     _range = r'(\w+?)-(\w+)'
     _steps = r'/(\w+)?'
     _star = r'\*'
-    
+
     def __init__(self, max_=60, min_=0):
         self.max_ = max_
         self.min_ = min_
@@ -45,14 +45,14 @@ class crontab_parser(object):
                 raise self.ParseException('empty part')
             acc |= set(self._parse_part(part))
         return acc
-    
+
     def _parse_part(self, part):
         for regex, handler in self.pats:
             m = regex.match(part)
             if m:
                 return handler(m.groups())
         return self._expand_range((part, ))
-    
+
     def _expand_range(self, toks):
         fr = self._expand_number(toks[0])
         if len(toks) > 1:
@@ -62,19 +62,19 @@ class crontab_parser(object):
                         list(range(self.min_, to + 1)))
             return list(range(fr, to + 1))
         return [fr]
-    
+
     def _range_steps(self, toks):
         if len(toks) != 3 or not toks[2]:
             raise self.ParseException('empty filter')
         return self._expand_range(toks[:2])[::int(toks[2])]
-    
+
     def _star_steps(self, toks):
         if not toks or not toks[0]:
             raise self.ParseException('empty filter')
         return self._expand_star()[::int(toks[0])]
     def _expand_star(self, *args):
         return list(range(self.min_, self.max_ + self.min_))
-    
+
     def _expand_number(self, s):
         if isinstance(s, str) and s[0] == '-':
             raise self.ParseException('negative numbers not supported')
@@ -99,7 +99,7 @@ class Setting(object):
     def __init__(self, manage):
         self.manage = manage
         self.settings_file = self.get_settings_file(manage)
-    
+
     def get_settings(self):
         """ get db settings from settings.py file without importing """
         settings = {'__file__': self.settings_file}
@@ -111,7 +111,7 @@ class Setting(object):
                     content += line
             exec(content, settings)
         return settings
-    
+
     def get_settings_file(self, manage):
         with open(manage, 'r') as handler:
             regex = re.compile(r'"DJANGO_SETTINGS_MODULE"\s*,\s*"([^"]+)"')
@@ -128,7 +128,7 @@ class Setting(object):
 class DB(object):
     def __init__(self, settings):
         self.settings = settings['DATABASES']['default']
-    
+
     def connect(self):
         if self.settings['ENGINE'] == 'django.db.backends.sqlite3':
             import sqlite3
@@ -138,7 +138,7 @@ class DB(object):
             self.conn = psycopg2.connect("dbname='{NAME}' user='{USER}' host='{HOST}' password='{PASSWORD}'".format(**self.settings))
         else:
             raise ValueError("%s engine not supported." % self.settings['ENGINE'])
-    
+
     def query(self, query):
         cur = self.conn.cursor()
         try:
@@ -147,7 +147,7 @@ class DB(object):
         finally:
             cur.close()
         return result
-    
+
     def close(self):
         self.conn.close()
 
@@ -161,7 +161,7 @@ def fire_pending_tasks(manage, db):
             "WHERE p.crontab_id = c.id AND p.enabled = {}"
         ).format(enabled)
         return db.query(query)
-    
+
     def is_due(now, minute, hour, day_of_week, day_of_month, month_of_year):
         n_minute, n_hour, n_day_of_week, n_day_of_month, n_month_of_year = now
         return (
@@ -171,14 +171,14 @@ def fire_pending_tasks(manage, db):
             n_day_of_month in crontab_parser(31, 1).parse(day_of_month) and
             n_month_of_year in crontab_parser(12, 1).parse(month_of_year)
         )
-    
+
     now = datetime.utcnow()
     now = tuple(map(int, now.strftime("%M %H %w %d %m").split()))
     for minute, hour, day_of_week, day_of_month, month_of_year, task_id in get_tasks(db):
         if is_due(now, minute, hour, day_of_week, day_of_month, month_of_year):
             command = 'python3 -W ignore::DeprecationWarning {manage} runtask {task_id}'.format(
                 manage=manage, task_id=task_id)
-            proc = run(command, async=True)
+            proc = run(command, run_async=True)
             yield proc
 
 
@@ -187,7 +187,7 @@ def fire_pending_messages(settings, db):
         MAILER_DEFERE_SECONDS = settings.get('MAILER_DEFERE_SECONDS', (300, 600, 60*60, 60*60*24))
         now = datetime.utcnow()
         query_or = []
-        
+
         for num, seconds in enumerate(MAILER_DEFERE_SECONDS):
             delta = timedelta(seconds=seconds)
             epoch = now-delta
@@ -198,10 +198,10 @@ def fire_pending_messages(settings, db):
             WHERE (mailer_message.state = 'QUEUED'
                 OR (mailer_message.state = 'DEFERRED' AND (%s))) LIMIT 1""" % ' OR '.join(query_or)
         return bool(db.query(query))
-    
+
     if has_pending_messages(settings, db):
         command = 'python3 -W ignore::DeprecationWarning {manage} sendpendingmessages'.format(manage=manage)
-        proc = run(command, async=True)
+        proc = run(command, run_async=True)
         yield proc
 
 

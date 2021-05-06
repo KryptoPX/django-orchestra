@@ -24,7 +24,7 @@ class SoftwareService(plugins.Plugin, metaclass=plugins.PluginMount):
         'http': (Website.HTTP, (Website.HTTP, Website.HTTP_AND_HTTPS)),
         'https': (Website.HTTPS_ONLY, (Website.HTTPS, Website.HTTP_AND_HTTPS, Website.HTTPS_ONLY)),
     }
-    
+
     name = None
     verbose_name = None
     form = SaaSPasswordForm
@@ -34,7 +34,7 @@ class SoftwareService(plugins.Plugin, metaclass=plugins.PluginMount):
     class_verbose_name = _("Software as a Service")
     plugin_field = 'service'
     allow_custom_url = False
-    
+
     @classmethod
     @lru_cache()
     def get_plugins(cls, all=False):
@@ -48,18 +48,18 @@ class SoftwareService(plugins.Plugin, metaclass=plugins.PluginMount):
             for cls in settings.SAAS_ENABLED_SERVICES:
                 plugins.append(import_class(cls))
         return plugins
-    
+
     def get_change_readonly_fields(cls):
         fields = super(SoftwareService, cls).get_change_readonly_fields()
         return fields + ('name',)
-    
+
     def get_site_domain(self):
         context = {
             'site_name': self.instance.name,
             'name': self.instance.name,
         }
         return self.site_domain % context
-    
+
     def clean(self):
         if self.allow_custom_url:
             if self.instance.custom_url:
@@ -69,7 +69,7 @@ class SoftwareService(plugins.Plugin, metaclass=plugins.PluginMount):
             raise ValidationError({
                 'custom_url': _("Custom URL not allowed for this service."),
             })
-    
+
     def clean_data(self):
         data = super(SoftwareService, self).clean_data()
         if not self.instance.pk:
@@ -88,10 +88,10 @@ class SoftwareService(plugins.Plugin, metaclass=plugins.PluginMount):
                 if errors:
                     raise ValidationError(errors)
         return data
-    
+
     def get_directive_name(self):
         return '%s-saas' % self.name
-    
+
     def get_directive(self, *args):
         if not args:
             instance = self.instance
@@ -106,7 +106,7 @@ class SoftwareService(plugins.Plugin, metaclass=plugins.PluginMount):
             website__domains__name=url.netloc,
             website__account=account,
         )
-    
+
     def get_website(self):
         url = urlparse(self.instance.custom_url)
         account = self.instance.account
@@ -117,10 +117,10 @@ class SoftwareService(plugins.Plugin, metaclass=plugins.PluginMount):
             directives__name=self.get_directive_name(),
             directives__value=url.path,
         )
-    
+
     def create_or_update_directive(self):
         return helpers.create_or_update_directive(self)
-    
+
     def delete_directive(self):
         directive = None
         try:
@@ -131,7 +131,7 @@ class SoftwareService(plugins.Plugin, metaclass=plugins.PluginMount):
             return
         if directive is not None:
             directive.delete()
-    
+
     def save(self):
         # pre instance.save()
         if isinstalled('orchestra.contrib.websites'):
@@ -139,11 +139,11 @@ class SoftwareService(plugins.Plugin, metaclass=plugins.PluginMount):
                 self.create_or_update_directive()
             elif self.instance.pk:
                 self.delete_directive()
-    
+
     def delete(self):
         if isinstalled('orchestra.contrib.websites'):
             self.delete_directive()
-    
+
     def get_related(self):
         return []
 
@@ -152,7 +152,7 @@ class DBSoftwareService(SoftwareService):
     db_name = None
     db_user = None
     abstract = True
-    
+
     def get_db_name(self):
         context = {
             'name': self.instance.name,
@@ -161,15 +161,15 @@ class DBSoftwareService(SoftwareService):
         db_name = self.db_name % context
         # Limit for mysql database names
         return db_name[:65]
-    
+
     def get_db_user(self):
         return self.db_user
-    
+
     @cached
     def get_account(self):
         account_model = self.instance._meta.get_field('account')
-        return account_model.rel.to.objects.get_main()
-    
+        return account_model.remote_field.model.objects.get_main()
+
     def validate(self):
         super(DBSoftwareService, self).validate()
         create = not self.instance.pk
@@ -192,7 +192,7 @@ class DBSoftwareService(SoftwareService):
                 raise ValidationError({
                     'name': e.messages,
                 })
-    
+
     def save(self):
         super(DBSoftwareService, self).save()
         account = self.get_account()

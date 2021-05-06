@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models
 from django.db.models.functions import Concat, Coalesce
 from django.templatetags.static import static
@@ -32,18 +32,18 @@ class DomainInline(admin.TabularInline):
     readonly_fields = ('domain_link', 'display_records', 'account_link')
     extra = 0
     verbose_name_plural = _("Subdomains")
-    
+
     domain_link = admin_link('__str__')
     domain_link.short_description = _("Name")
     account_link = admin_link('account')
-    
+
     def display_records(self, domain):
         return ', '.join([record.type for record in domain.records.all()])
     display_records.short_description = _("Declared records")
-    
+
     def has_add_permission(self, *args, **kwargs):
         return False
-    
+
     def get_queryset(self, request):
         """ Order by structured name and imporve performance """
         qs = super(DomainInline, self).get_queryset(request)
@@ -66,9 +66,9 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
     add_form = BatchDomainCreationAdminForm
     actions = (edit_records, set_soa, list_accounts)
     change_view_actions = (view_zone, edit_records)
-    
+
     top_link = admin_link('top')
-    
+
     def structured_name(self, domain):
         if domain.is_top:
             return domain.name
@@ -76,13 +76,13 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
     structured_name.short_description = _("name")
     structured_name.allow_tags = True
     structured_name.admin_order_field = 'structured_name'
-    
+
     def display_is_top(self, domain):
         return domain.is_top
     display_is_top.short_description = _("Is top")
     display_is_top.boolean = True
     display_is_top.admin_order_field = 'top'
-    
+
     def display_websites(self, domain):
         if apps.isinstalled('orchestra.contrib.websites'):
             websites = domain.websites.all()
@@ -107,7 +107,7 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
     display_websites.admin_order_field = 'websites__name'
     display_websites.short_description = _("Websites")
     display_websites.allow_tags = True
-    
+
     def display_addresses(self, domain):
         if apps.isinstalled('orchestra.contrib.mailboxes'):
             add_url = reverse('admin:mailboxes_address_add')
@@ -127,7 +127,7 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
     display_addresses.short_description = _("Addresses")
     display_addresses.admin_order_field = 'addresses__count'
     display_addresses.allow_tags = True
-    
+
     def implicit_records(self, domain):
         defaults = []
         types = set(domain.records.values_list('type', flat=True))
@@ -149,7 +149,7 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
         return '<br>'.join(lines)
     implicit_records.short_description = _("Implicit records")
     implicit_records.allow_tags = True
-    
+
     def get_fieldsets(self, request, obj=None):
         """ Add SOA fields when domain is top """
         fieldsets = super(DomainAdmin, self).get_fieldsets(request, obj)
@@ -175,13 +175,13 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
                 if 'top_link' not in existing:
                     fieldsets[0][1]['fields'].insert(2, 'top_link')
         return fieldsets
-    
+
     def get_inline_instances(self, request, obj=None):
         inlines = super(DomainAdmin, self).get_inline_instances(request, obj)
         if not obj or not obj.is_top:
             return [inline for inline in inlines if type(inline) != DomainInline]
         return inlines
-    
+
     def get_queryset(self, request):
         """ Order by structured name and imporve performance """
         qs = super(DomainAdmin, self).get_queryset(request)
@@ -196,7 +196,7 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
         if apps.isinstalled('orchestra.contrib.mailboxes'):
             qs = qs.annotate(models.Count('addresses'))
         return qs
-    
+
     def save_model(self, request, obj, form, change):
         """ batch domain creation support """
         super(DomainAdmin, self).save_model(request, obj, form, change)
@@ -205,7 +205,7 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
             for name in form.extra_names:
                 domain = Domain.objects.create(name=name, account_id=obj.account_id)
                 self.extra_domains.append(domain)
-    
+
     def save_related(self, request, form, formsets, change):
         """ batch domain creation support """
         super(DomainAdmin, self).save_related(request, form, formsets, change)
