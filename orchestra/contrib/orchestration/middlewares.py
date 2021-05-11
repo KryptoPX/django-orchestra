@@ -1,15 +1,15 @@
 from threading import local
 
 from django.contrib.admin.models import LogEntry
-from django.urls import resolve
 from django.db import transaction
-from django.db.models.signals import pre_delete, post_save, m2m_changed
+from django.db.models.signals import m2m_changed, post_save, pre_delete
 from django.dispatch import receiver
 from django.http.response import HttpResponseServerError
-
+from django.urls import resolve
+from django.utils.deprecation import MiddlewareMixin
 from orchestra.utils.python import OrderedSet
 
-from . import manager, Operation
+from . import Operation, manager
 from .helpers import message_user
 from .models import BackendLog, BackendOperation
 
@@ -35,7 +35,7 @@ def m2m_collector(sender, *args, **kwargs):
         OperationsMiddleware.collect(Operation.SAVE, **kwargs)
 
 
-class OperationsMiddleware(object):
+class OperationsMiddleware(MiddlewareMixin):
     """
     Stores all the operations derived from save and delete signals and executes them
     at the end of the request/response cycle

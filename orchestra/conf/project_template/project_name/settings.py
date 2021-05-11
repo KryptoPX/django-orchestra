@@ -25,6 +25,7 @@ SECRET_KEY = '{{ secret_key }}'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -84,6 +85,21 @@ INSTALLED_APPS = [
 ]
 
 
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'orchestra.core.caches.RequestCacheMiddleware',
+    # also handles transations, ATOMIC_REQUESTS does not wrap middlewares
+    'orchestra.contrib.orchestration.middlewares.OperationsMiddleware',
+]
+
+
 ROOT_URLCONF = '{{ project_name }}.urls'
 
 TEMPLATES = [
@@ -127,6 +143,24 @@ DATABASES = {
 }
 
 
+# Password validation
+# https://docs.djangoproject.com/en/{{ docs_version }}/ref/settings/#auth-password-validators
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
 # Internationalization
 # https://docs.djangoproject.com/en/{{ docs_version }}/topics/i18n/
 
@@ -166,22 +200,6 @@ LOCALE_PATHS = (
 )
 
 ORCHESTRA_SITE_NAME = '{{ project_name }}'
-
-
-MIDDLEWARE_CLASSES = (
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-    # 'django.middleware.locale.LocaleMiddleware'
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'orchestra.core.caches.RequestCacheMiddleware',
-    # also handles transations, ATOMIC_REQUESTS does not wrap middlewares
-    'orchestra.contrib.orchestration.middlewares.OperationsMiddleware',
-)
 
 
 AUTH_USER_MODEL = 'accounts.Account'
