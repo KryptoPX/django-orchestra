@@ -1,5 +1,5 @@
 from rest_framework import viewsets, mixins
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from orchestra.api import router, LogApiMixin
@@ -12,19 +12,19 @@ from .serializers import TicketSerializer, QueueSerializer
 class TicketViewSet(LogApiMixin, viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
-    
-    @detail_route()
+
+    @action(detail=True)
     def mark_as_read(self, request, pk=None):
         ticket = self.get_object()
         ticket.mark_as_read_by(request.user)
         return Response({'status': 'Ticket marked as read'})
-    
-    @detail_route()
+
+    @action(detail=True)
     def mark_as_unread(self, request, pk=None):
         ticket = self.get_object()
         ticket.mark_as_unread_by(request.user)
         return Response({'status': 'Ticket marked as unread'})
-    
+
     def get_queryset(self):
         qs = super(TicketViewSet, self).get_queryset()
         qs = qs.select_related('creator', 'queue')
