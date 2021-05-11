@@ -25,6 +25,7 @@ SECRET_KEY = '{{ secret_key }}'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -81,6 +82,21 @@ INSTALLED_APPS = [
     'orchestra.contrib.resources',
     'orchestra.contrib.settings',
 #    'django_nose',
+]
+
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'orchestra.core.caches.RequestCacheMiddleware',
+    # also handles transations, ATOMIC_REQUESTS does not wrap middlewares
+    'orchestra.contrib.orchestration.middlewares.OperationsMiddleware',
 ]
 
 
@@ -166,22 +182,6 @@ LOCALE_PATHS = (
 )
 
 ORCHESTRA_SITE_NAME = '{{ project_name }}'
-
-
-MIDDLEWARE_CLASSES = (
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-    # 'django.middleware.locale.LocaleMiddleware'
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'orchestra.core.caches.RequestCacheMiddleware',
-    # also handles transations, ATOMIC_REQUESTS does not wrap middlewares
-    'orchestra.contrib.orchestration.middlewares.OperationsMiddleware',
-)
 
 
 AUTH_USER_MODEL = 'accounts.Account'
