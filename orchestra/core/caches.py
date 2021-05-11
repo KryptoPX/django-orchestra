@@ -2,7 +2,7 @@ from threading import currentThread
 
 from django.core.cache.backends.dummy import DummyCache
 from django.core.cache.backends.locmem import LocMemCache
-
+from django.utils.deprecation import MiddlewareMixin
 
 _request_cache = {}
 
@@ -25,21 +25,21 @@ def get_request_cache():
         return DummyCache('dummy', {})
 
 
-class RequestCacheMiddleware(object):
+class RequestCacheMiddleware(MiddlewareMixin):
     def process_request(self, request):
         current_thread = currentThread()
         cache = _request_cache.get(current_thread, RequestCache())
         _request_cache[current_thread] = cache
         cache.clear()
-    
+
     def clear_cache(self):
         current_thread = currentThread()
         if currentThread() in _request_cache:
             _request_cache[current_thread].clear()
-    
+
     def process_exception(self, request, exception):
         self.clear_cache()
-    
+
     def process_response(self, request, response):
         self.clear_cache()
         return response
