@@ -3,6 +3,8 @@ from django.urls import reverse
 from django.db import models
 from django.db.models.functions import Concat, Coalesce
 from django.templatetags.static import static
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext, ugettext_lazy as _
 
 from orchestra.admin import ExtendedModelAdmin
@@ -83,6 +85,7 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
     display_is_top.boolean = True
     display_is_top.admin_order_field = 'top'
 
+    @mark_safe
     def display_websites(self, domain):
         if apps.isinstalled('orchestra.contrib.websites'):
             websites = domain.websites.all()
@@ -92,7 +95,7 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
                     site_link = get_on_site_link(website.get_absolute_url())
                     admin_url = change_url(website)
                     title = _("Edit website")
-                    link = '<a href="%s" title="%s">%s %s</a>' % (
+                    link = format_html('<a href="{}" title="{}">{} {}</a>',
                         admin_url, title, website.name, site_link)
                     links.append(link)
                 return '<br>'.join(links)
@@ -108,6 +111,7 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
     display_websites.short_description = _("Websites")
     display_websites.allow_tags = True
 
+    @mark_safe
     def display_addresses(self, domain):
         if apps.isinstalled('orchestra.contrib.mailboxes'):
             add_url = reverse('admin:mailboxes_address_add')
