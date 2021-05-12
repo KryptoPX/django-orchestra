@@ -7,6 +7,7 @@ from django.db import models
 from django.db.models import F, Sum, Prefetch
 from django.db.models.functions import Coalesce
 from django.templatetags.static import static
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import redirect
@@ -67,6 +68,7 @@ class BillLineInline(admin.TabularInline):
 
     order_link = admin_link('order', display='pk')
 
+    @mark_safe
     def display_total(self, line):
         if line.pk:
             total = line.compute_total()
@@ -242,6 +244,7 @@ class BillLineManagerAdmin(BillLineAdmin):
 
 
 class BillAdminMixin(AccountAdminMixin):
+    @mark_safe
     def display_total_with_subtotals(self, bill):
         if bill.pk:
             currency = settings.BILLS_CURRENCY.lower()
@@ -255,6 +258,7 @@ class BillAdminMixin(AccountAdminMixin):
     display_total_with_subtotals.short_description = _("total")
     display_total_with_subtotals.admin_order_field = 'approx_total'
 
+    @mark_safe
     def display_payment_state(self, bill):
         if bill.pk:
             t_opts = bill.transactions.model._meta
@@ -376,7 +380,7 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
 
     def display_total(self, bill):
         currency = settings.BILLS_CURRENCY.lower()
-        return '%s &%s;' % (bill.compute_total(), currency)
+        return format_html('{} &{};', bill.compute_total(), currency)
     display_total.allow_tags = True
     display_total.short_description = _("total")
     display_total.admin_order_field = 'approx_total'
@@ -384,7 +388,7 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
     def type_link(self, bill):
         bill_type = bill.type.lower()
         url = reverse('admin:bills_%s_changelist' % bill_type)
-        return '<a href="%s">%s</a>' % (url, bill.get_type_display())
+        return format_html('<a href="{}">{}</a>', url, bill.get_type_display())
     type_link.allow_tags = True
     type_link.short_description = _("type")
     type_link.admin_order_field = 'type'

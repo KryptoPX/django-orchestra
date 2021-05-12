@@ -10,7 +10,7 @@ from django.urls import reverse, NoReverseMatch
 from django.db import models
 from django.shortcuts import redirect
 from django.utils import timezone
-from django.utils.html import escape
+from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 
 from orchestra.models.utils import get_field_value
@@ -158,7 +158,7 @@ def admin_date(*args, **kwargs):
         date = date.strftime("%Y-%m-%d %H:%M:%S %Z")
     else:
         date = date.strftime("%Y-%m-%d")
-    return '<span title="{0}">{1}</span>'.format(date, escape(natural))
+    return format_html('<span title="{0}">{1}</span>', date, natural)
 
 
 def get_object_from_url(modeladmin, request):

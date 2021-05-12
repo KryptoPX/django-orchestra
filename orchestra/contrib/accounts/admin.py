@@ -207,6 +207,7 @@ class AccountAdminMixin(object):
     account = None
     list_select_related = ('account',)
 
+    @mark_safe
     def display_active(self, instance):
         if not instance.is_active:
             return '<img src="%s" alt="False">' % static('admin/img/icon-no.svg')

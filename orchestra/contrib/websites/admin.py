@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.urls import resolve
 from django.db.models import Q
 from django.utils.encoding import force_text
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from orchestra.admin import ExtendedModelAdmin
@@ -78,6 +79,7 @@ class WebsiteAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
     search_fields = ('name', 'account__username', 'domains__name', 'content__webapp__name')
     actions = (disable, enable, list_accounts)
 
+    @mark_safe
     def display_domains(self, website):
         domains = []
         for domain in website.domains.all():
