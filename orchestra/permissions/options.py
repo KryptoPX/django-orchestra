@@ -90,7 +90,7 @@ class RelatedPermission(Permission):
         if obj is None:
             parent = cls
             for relation in relations:
-                parent = getattr(parent, relation).field.model
+                parent = getattr(parent, relation).field.related_model
         else:
             parent = functools.reduce(getattr, relations, obj)
 

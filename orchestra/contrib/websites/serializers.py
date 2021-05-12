@@ -13,13 +13,13 @@ from .validators import validate_domain_protocol
 
 class RelatedDomainSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSerializer):
     class Meta:
-        model = Website.domains.field.model
+        model = Website.domains.field.related_model
         fields = ('url', 'id', 'name')
 
 
 class RelatedWebAppSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSerializer):
     class Meta:
-        model = Content.webapp.field.model
+        model = Content.webapp.field.related_model
         fields = ('url', 'id', 'name', 'type')
 
 

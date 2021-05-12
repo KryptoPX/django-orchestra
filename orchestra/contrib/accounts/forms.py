@@ -47,7 +47,7 @@ def create_account_creation_form():
             # Previous validation error
             return
         errors = {}
-        systemuser_model = Account.main_systemuser.field.model
+        systemuser_model = Account.main_systemuser.field.related_model
         if systemuser_model.objects.filter(username=account.username).exists():
             errors['username'] = _("A system user with this name already exists.")
         for model, key, related_kwargs, __ in create_related:
