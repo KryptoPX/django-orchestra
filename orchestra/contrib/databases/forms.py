@@ -17,11 +17,11 @@ class DatabaseUserCreationForm(forms.ModelForm):
     password2 = forms.CharField(label=_("Password confirmation"), required=False,
         widget=forms.PasswordInput,
         help_text=_("Enter the same password as above, for verification."))
-    
+
     class Meta:
         model = DatabaseUser
         fields = ('username', 'account', 'type')
-    
+
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
@@ -40,11 +40,11 @@ class DatabaseCreationForm(DatabaseUserCreationForm):
             'invalid': _("This value may contain 16 characters or fewer, only letters, numbers and "
                          "@/./+/-/_ characters.")})
     user = forms.ModelChoiceField(required=False, queryset=DatabaseUser.objects)
-    
+
     class Meta:
         model = Database
         fields = ('username', 'account', 'type')
-    
+
     def __init__(self, *args, **kwargs):
         super(DatabaseCreationForm, self).__init__(*args, **kwargs)
         account_id = self.initial.get('account', self.initial_account)
@@ -53,13 +53,13 @@ class DatabaseCreationForm(DatabaseUserCreationForm):
             choices = [ (u.pk, "%s (%s)" % (u, u.get_type_display())) for u in qs ]
             self.fields['user'].queryset = qs
             self.fields['user'].choices = [(None, '--------'),] + choices
-    
+
     def clean_username(self):
         username = self.cleaned_data.get('username')
         if DatabaseUser.objects.filter(username=username).exists():
             raise ValidationError("Provided username already exists.")
         return username
-    
+
     def clean_password2(self):
         username = self.cleaned_data.get('username')
         password1 = self.cleaned_data.get('password1')
@@ -70,14 +70,14 @@ class DatabaseCreationForm(DatabaseUserCreationForm):
             msg = _("The two password fields didn't match.")
             raise ValidationError(msg)
         return password2
-    
+
     def clean_user(self):
         user = self.cleaned_data.get('user')
         if user and user.type != self.cleaned_data.get('type'):
             msg = _("Database type and user type doesn't match")
             raise ValidationError(msg)
         return user
-    
+
     def clean(self):
         cleaned_data = super(DatabaseCreationForm, self).clean()
         if 'user' in cleaned_data and 'username' in cleaned_data:
@@ -91,7 +91,7 @@ class DatabaseCreationForm(DatabaseUserCreationForm):
 
 class ReadOnlySQLPasswordHashField(ReadOnlyPasswordHashField):
     class ReadOnlyPasswordHashWidget(forms.Widget):
-        def render(self, name, value, attrs):
+        def render(self, name, value, attrs, renderer=None):
             original = ReadOnlyPasswordHashField.widget().render(name, value, attrs)
             if 'Invalid' not in original:
                 return original
@@ -114,10 +114,10 @@ class DatabaseUserChangeForm(forms.ModelForm):
                     "this user's password, but you can change the password "
                     "using <a href='../password/'>this form</a>. "
                     "<a onclick='return showAddAnotherPopup(this);' href='../hash/'>Show hash</a>."))
-    
+
     class Meta:
         model = DatabaseUser
         fields = ('username', 'password', 'type', 'account')
-    
+
     def clean_password(self):
         return self.initial["password"]
