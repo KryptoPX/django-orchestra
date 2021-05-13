@@ -51,8 +51,9 @@ class Server(models.Model):
 
     def clean(self):
         self.name = self.name.strip()
-        self.address = self.address.strip()
-        if self.name and not self.address:
+        if self.address:
+            self.address = self.address.strip()
+        elif self.name:
             validate = OrValidator(validate_ip_address, validate_hostname)
             validate_hostname(self.name)
             try:
