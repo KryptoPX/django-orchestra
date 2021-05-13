@@ -37,17 +37,17 @@ class SpanWidget(forms.Widget):
         return False
 
 
-def paddingCheckboxSelectMultiple(padding):
+class PaddingCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
     """ Ugly hack to render this widget nicely on Django admin """
-    widget = forms.CheckboxSelectMultiple()
-    old_render = widget.render
+    def __init__(self, padding, attrs=None, choices=()):
+        super().__init__(attrs=attrs, choices=choices)
+        self.padding = padding
+
     def render(self, *args, **kwargs):
-        value = old_render(self, *args, **kwargs)
+        value = super().render(*args, **kwargs)
         value = re.sub(r'^<ul id=([^>]+)>',
-            r'<ul id=\1 style="padding-left:%ipx">' % padding, value, 1)
+            r'<ul id=\1 style="padding-left:%ipx">' % self.padding, value, 1)
         return mark_safe(value)
-    widget.render = render
-    return widget
 
 
 class DynamicHelpTextSelect(forms.Select):

@@ -16,7 +16,7 @@ from orchestra.admin import ExtendedModelAdmin
 from orchestra.admin.utils import admin_date, insertattr, admin_link, change_url
 from orchestra.contrib.accounts.actions import list_accounts
 from orchestra.contrib.accounts.admin import AccountAdminMixin, AccountAdmin
-from orchestra.forms.widgets import paddingCheckboxSelectMultiple
+from orchestra.forms.widgets import PaddingCheckboxSelectMultiple
 
 from . import settings, actions
 from .filters import (BillTypeListFilter, HasBillContactListFilter, TotalListFilter,
@@ -483,7 +483,7 @@ class BillContactInline(admin.StackedInline):
         if db_field.name == 'address':
             kwargs['widget'] = forms.Textarea(attrs={'cols': 70, 'rows': 2})
         if db_field.name == 'email_usage':
-            kwargs['widget'] = paddingCheckboxSelectMultiple(45)
+            kwargs['widget'] = PaddingCheckboxSelectMultiple(45)
         return super().formfield_for_dbfield(db_field, **kwargs)
 
 
