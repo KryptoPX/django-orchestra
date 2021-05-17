@@ -80,7 +80,6 @@ class BillLineInline(admin.TabularInline):
                 return '<a href="%s" title="%s">%s <img src="%s"></img></a>' % (url, content, total, img)
             return '<a href="%s">%s</a>' % (url, total)
     display_total.short_description = _("Total")
-    display_total.allow_tags = True
 
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ Make value input widget bigger """

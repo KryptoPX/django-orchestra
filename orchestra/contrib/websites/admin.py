@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.urls import resolve
 from django.db.models import Q
 from django.utils.encoding import force_text
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
@@ -87,9 +88,9 @@ class WebsiteAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
             domains.append('<a href="%s">%s</a>' % (url, url))
         return '<br>'.join(domains)
     display_domains.short_description = _("domains")
-    display_domains.allow_tags = True
     display_domains.admin_order_field = 'domains'
 
+    @mark_safe
     def display_webapps(self, website):
         webapps = []
         for content in website.content_set.all():
@@ -102,9 +103,9 @@ class WebsiteAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
                 pass
             url = change_url(webapp)
             name = "%s on %s" % (webapp.name, content.path or '/')
-            webapps.append('<a href="%s" title="%s">%s %s</a>' % (url, detail, name, site_link))
+            webapp_info = format_html('<a href="{}" title="{}">{}</a> {}', url, detail, name, site_link)
+            webapps.append(webapp_info)
         return '<br>'.join(webapps)
-    display_webapps.allow_tags = True
     display_webapps.short_description = _("Web apps")
 
     def formfield_for_dbfield(self, db_field, **kwargs):

@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.encoding import force_text
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext, ugettext_lazy as _
 
 from orchestra.admin import ExtendedModelAdmin
@@ -66,6 +67,7 @@ class WebAppAdmin(SelectPluginAdminMixin, AccountAdminMixin, ExtendedModelAdmin)
 
     display_type = display_plugin_field('type')
 
+    @mark_safe
     def display_websites(self, webapp):
         websites = []
         for content in webapp.content_set.all():
@@ -82,7 +84,6 @@ class WebAppAdmin(SelectPluginAdminMixin, AccountAdminMixin, ExtendedModelAdmin)
             websites.append('<a href="%s">%s%s</a>' % (add_url, plus, ugettext("Add website")))
         return '<br>'.join(websites)
     display_websites.short_description = _("web sites")
-    display_websites.allow_tags = True
 
     def display_detail(self, webapp):
         try:
