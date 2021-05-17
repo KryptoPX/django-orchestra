@@ -217,7 +217,7 @@ class MailboxAdmin(ChangePasswordAdminMixin, SelectAccountAdminMixin, ExtendedMo
             elif obj.custom_filtering:
                 messages.warning(request, msg)
         super(MailboxAdmin, self).save_model(request, obj, form, change)
-        obj.addresses = form.cleaned_data['addresses']
+        obj.addresses.set(form.cleaned_data['addresses'])
 
 
 class AddressAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
