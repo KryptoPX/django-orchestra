@@ -179,12 +179,12 @@ class ServerAdmin(ExtendedModelAdmin):
     change_view_actions = actions
 
     def display_ping(self, instance):
-        return self._remote_state[instance.pk][0]
+        return mark_safe(self._remote_state[instance.pk][0])
     display_ping.short_description = _("Ping")
     display_ping.allow_tags = True
 
     def display_uptime(self, instance):
-        return self._remote_state[instance.pk][1]
+        return mark_safe(self._remote_state[instance.pk][1])
     display_uptime.short_description = _("Uptime")
     display_uptime.allow_tags = True
 
