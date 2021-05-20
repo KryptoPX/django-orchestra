@@ -13,7 +13,7 @@ from .models import Queue, Ticket
 
 class MarkDownWidget(forms.Textarea):
     """ MarkDown textarea widget with syntax preview """
-    
+
     markdown_url = static('issues/markdown_syntax.html')
     markdown_help_text = (
         '<a href="%s" onclick=\'window.open("%s", "", "resizable=yes, '
@@ -21,8 +21,8 @@ class MarkDownWidget(forms.Textarea):
         'return false;\'>markdown format</a>' % (markdown_url, markdown_url)
     )
     markdown_help_text = 'HTML not allowed, you can use %s' % markdown_help_text
-    
-    def render(self, name, value, attrs):
+
+    def render(self, name, value, attrs, renderer=None):
         widget_id = attrs['id'] if attrs and 'id' in attrs else 'id_%s' % name
         textarea = super(MarkDownWidget, self).render(name, value, attrs)
         preview = ('<a class="load-preview" href="#" data-field="{0}">preview</a>'\
@@ -35,18 +35,18 @@ class MessageInlineForm(forms.ModelForm):
     """  Add message form """
     created_on = forms.CharField(label="Created On", required=False)
     content = forms.CharField(widget=MarkDownWidget(), required=False)
-    
+
     class Meta:
         fields = ('author', 'author_name', 'created_on', 'content')
-    
+
     def __init__(self, *args, **kwargs):
         super(MessageInlineForm, self).__init__(*args, **kwargs)
         self.fields['created_on'].widget = SpanWidget(display='')
-        
+
     def clean_content(self):
         """ clean HTML tags """
         return strip_tags(self.cleaned_data['content'])
-    
+
     def save(self, *args, **kwargs):
         if self.instance.pk is None:
             self.instance.author = self.user
@@ -58,7 +58,7 @@ class UsersIterator(forms.models.ModelChoiceIterator):
     def __init__(self, *args, **kwargs):
         self.ticket = kwargs.pop('ticket', False)
         super(forms.models.ModelChoiceIterator, self).__init__(*args, **kwargs)
-    
+
     def __iter__(self):
         yield ('', '---------')
         users = get_user_model().objects.exclude(is_active=False).order_by('name')
@@ -73,14 +73,14 @@ class UsersIterator(forms.models.ModelChoiceIterator):
 class TicketForm(forms.ModelForm):
     display_description = forms.CharField(label=_("Description"), required=False)
     description = forms.CharField(widget=MarkDownWidget(attrs={'class':'vLargeTextField'}))
-    
+
     class Meta:
         model = Ticket
         fields = (
             'creator', 'creator_name', 'owner', 'queue', 'subject', 'description',
             'priority', 'state', 'cc', 'display_description'
         )
-    
+
     def __init__(self, *args, **kwargs):
         super(TicketForm, self).__init__(*args, **kwargs)
         ticket = kwargs.get('instance', False)
@@ -101,7 +101,7 @@ class TicketForm(forms.ModelForm):
             description = '<div style="padding-left: 95px;">%s</div>' % description
             widget = SpanWidget(display=description)
             self.fields['display_description'].widget = widget
-    
+
     def clean_description(self):
         """  clean HTML tags """
         return strip_tags(self.cleaned_data['description'])
