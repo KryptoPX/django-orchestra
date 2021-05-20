@@ -74,9 +74,8 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
     def structured_name(self, domain):
         if domain.is_top:
             return domain.name
-        return '&nbsp;'*4 + domain.name
+        return mark_safe('&nbsp;'*4 + domain.name)
     structured_name.short_description = _("name")
-    structured_name.allow_tags = True
     structured_name.admin_order_field = 'structured_name'
 
     def display_is_top(self, domain):
@@ -101,15 +100,14 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
                 return '<br>'.join(links)
             add_url = reverse('admin:websites_website_add')
             add_url += '?account=%i&domains=%i' % (domain.account_id, domain.pk)
-            image = '<img src="%s"></img>' % static('orchestra/images/add.png')
-            add_link = '<a href="%s" title="%s">%s</a>' % (
-                add_url, _("Add website"), image
+            add_link = format_html(
+                '<a href="{}" title="{}"><img src="{}" /></a>', add_url,
+                _("Add website"), static('orchestra/images/add.png'),
             )
             return _("No website %s") % (add_link)
         return '---'
     display_websites.admin_order_field = 'websites__name'
     display_websites.short_description = _("Websites")
-    display_websites.allow_tags = True
 
     @mark_safe
     def display_addresses(self, domain):
@@ -130,10 +128,9 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
         return '---'
     display_addresses.short_description = _("Addresses")
     display_addresses.admin_order_field = 'addresses__count'
-    display_addresses.allow_tags = True
 
+    @mark_safe
     def implicit_records(self, domain):
-        defaults = []
         types = set(domain.records.values_list('type', flat=True))
         ttl = settings.DOMAINS_DEFAULT_TTL
         lines = []
@@ -145,14 +142,13 @@ class DomainAdmin(AccountAdminMixin, ExtendedModelAdmin):
                 value=record.value
             )
             if not domain.record_is_implicit(record, types):
-                line = '<strike>%s</strike>' % line
+                line = format_html('<strike>{}</strike>', line)
             if record.type is Record.SOA:
                 lines.insert(0, line)
             else:
                 lines.append(line)
         return '<br>'.join(lines)
     implicit_records.short_description = _("Implicit records")
-    implicit_records.allow_tags = True
 
     def get_fieldsets(self, request, obj=None):
         """ Add SOA fields when domain is top """

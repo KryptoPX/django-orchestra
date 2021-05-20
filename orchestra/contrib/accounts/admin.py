@@ -216,7 +216,6 @@ class AccountAdminMixin(object):
             return '<img style="width:13px" src="%s" alt="False" title="%s">' % (static('admin/img/inline-delete.svg'), msg)
         return '<img src="%s" alt="False">' % static('admin/img/icon-yes.svg')
     display_active.short_description = _("active")
-    display_active.allow_tags = True
     display_active.admin_order_field = 'is_active'
 
     def account_link(self, instance):
