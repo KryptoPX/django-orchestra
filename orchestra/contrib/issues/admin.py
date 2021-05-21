@@ -5,7 +5,8 @@ from django.urls import reverse
 from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django.utils.html import strip_tags
+from django.utils.html import format_html, strip_tags
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from markdown import markdown
 
@@ -50,6 +51,7 @@ class MessageReadOnlyInline(admin.TabularInline):
             'all': ('orchestra/css/hide-inline-id.css',)
         }
 
+    @mark_safe
     def content_html(self, msg):
         context = {
             'number': msg.number,
@@ -58,12 +60,13 @@ class MessageReadOnlyInline(admin.TabularInline):
         }
         summary = _("#%(number)i Updated by %(author)s about %(time)s") % context
         header = '<strong style="color:#666;">%s</strong><hr />' % summary
+
         content = markdown(msg.content)
         content = content.replace('>\n', '>')
         content = '<div style="padding-left:20px;">%s</div>' % content
+
         return header + content
     content_html.short_description = _("Content")
-    content_html.allow_tags = True
 
     def has_add_permission(self, request):
         return False
@@ -111,10 +114,10 @@ class TicketInline(admin.TabularInline):
     colored_state = admin_colored('state', colors=STATE_COLORS, bold=False)
     colored_priority = admin_colored('priority', colors=PRIORITY_COLORS, bold=False)
 
+    @mark_safe
     def ticket_id(self, instance):
         return '<b>%s</b>' % admin_link()(instance)
     ticket_id.short_description = '#'
-    ticket_id.allow_tags = True
 
 
 class TicketAdmin(ExtendedModelAdmin):
@@ -192,6 +195,7 @@ class TicketAdmin(ExtendedModelAdmin):
     display_state = admin_colored('state', colors=STATE_COLORS, bold=False)
     display_priority = admin_colored('priority', colors=PRIORITY_COLORS, bold=False)
 
+    @mark_safe
     def display_summary(self, ticket):
         context = {
             'creator': admin_link('creator')(self, ticket) if ticket.creator else ticket.creator_name,
@@ -207,14 +211,12 @@ class TicketAdmin(ExtendedModelAdmin):
             context['updated'] = '. Updated by %(updater)s about %(updated)s' % context
         return '<h4>Added by %(creator)s about %(created)s%(updated)s</h4>' % context
     display_summary.short_description = 'Summary'
-    display_summary.allow_tags = True
 
     def unbold_id(self, ticket):
         """ Unbold id if ticket is read """
         if ticket.is_read_by(self.user):
-            return '<span style="font-weight:normal;font-size:11px;">%s</span>' % ticket.pk
+            return format_html('<span style="font-weight:normal;font-size:11px;">{}</span>', ticket.pk)
         return ticket.pk
-    unbold_id.allow_tags = True
     unbold_id.short_description = "#"
     unbold_id.admin_order_field = 'id'
 
@@ -222,8 +224,7 @@ class TicketAdmin(ExtendedModelAdmin):
         """ Bold subject when tickets are unread for request.user """
         if ticket.is_read_by(self.user):
             return ticket.subject
-        return "<strong class='unread'>%s</strong>" % ticket.subject
-    bold_subject.allow_tags = True
+        return format_html("<strong class='unread'>{}</strong>", ticket.subject)
     bold_subject.short_description = _("Subject")
     bold_subject.admin_order_field = 'subject'
 
@@ -297,10 +298,9 @@ class QueueAdmin(admin.ModelAdmin):
         num = queue.tickets__count
         url = reverse('admin:issues_ticket_changelist')
         url += '?queue=%i' % queue.pk
-        return '<a href="%s">%d</a>' % (url, num)
+        return format_html('<a href="{}">{}</a>', url, num)
     num_tickets.short_description = _("Tickets")
     num_tickets.admin_order_field = 'tickets__count'
-    num_tickets.allow_tags = True
 
     def get_list_display(self, request):
         """ show notifications """

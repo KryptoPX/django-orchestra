@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import reverse
 from django.db import models
+from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 
 from orchestra.admin import ExtendedModelAdmin
@@ -33,10 +34,9 @@ class PlanAdmin(ExtendedModelAdmin):
         num = plan.contracts__count
         url = reverse('admin:plans_contractedplan_changelist')
         url += '?plan__name={}'.format(plan.name)
-        return '<a href="{0}">{1}</a>'.format(url, num)
+        return format_html('<a href="{0}">{1}</a>', url, num)
     num_contracts.short_description = _("Contracts")
     num_contracts.admin_order_field = 'contracts__count'
-    num_contracts.allow_tags = True
 
     def get_queryset(self, request):
         qs = super(PlanAdmin, self).get_queryset(request)

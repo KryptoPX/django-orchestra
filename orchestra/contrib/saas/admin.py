@@ -48,7 +48,6 @@ class SaaSAdmin(SelectPluginAdminMixin, ChangePasswordAdminMixin, AccountAdminMi
             links.append(link)
         return '<br>'.join(links)
     display_url.short_description = _("URL")
-    display_url.allow_tags = True
     display_url.admin_order_field = 'name'
 
     def get_fields(self, *args, **kwargs):
