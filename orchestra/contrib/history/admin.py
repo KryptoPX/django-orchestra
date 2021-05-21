@@ -1,12 +1,14 @@
 from django.contrib import admin
-from django.utils.translation import ugettext_lazy as _
-from django.urls import reverse, NoReverseMatch
-from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
-from django.http import HttpResponseRedirect
-from django.contrib.admin.utils import unquote
 from django.contrib.admin.templatetags.admin_static import static
+from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
+from django.contrib.admin.utils import unquote
+from django.http import HttpResponseRedirect
+from django.urls import NoReverseMatch, reverse
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 
-from orchestra.admin.utils import admin_link, admin_date
+from orchestra.admin.utils import admin_date, admin_link
 
 
 class LogEntryAdmin(admin.ModelAdmin):
@@ -34,11 +36,12 @@ class LogEntryAdmin(admin.ModelAdmin):
     user_link = admin_link('user')
     display_action_time = admin_date('action_time', short_description=_("Time"))
 
+    @mark_safe
     def display_message(self, log):
-        edit = '<a href="%(url)s"><img src="%(img)s"></img></a>' % {
+        edit = format_html('<a href="{url}"><img src="{img}"></img></a>', **{
             'url': reverse('admin:admin_logentry_change', args=(log.pk,)),
             'img': static('admin/img/icon-changelink.svg'),
-        }
+        })
         if log.is_addition():
             return _('Added "%(link)s". %(edit)s') % {
                 'link': self.content_object_link(log),
@@ -57,7 +60,6 @@ class LogEntryAdmin(admin.ModelAdmin):
             }
     display_message.short_description = _("Message")
     display_message.admin_order_field = 'action_flag'
-    display_message.allow_tags = True
 
     def display_action(self, log):
         if log.is_addition():
@@ -75,10 +77,9 @@ class LogEntryAdmin(admin.ModelAdmin):
             url = reverse(view, args=(log.object_id,))
         except NoReverseMatch:
             return log.object_repr
-        return '<a href="%s">%s</a>' % (url, log.object_repr)
+        return format_html('<a href="{}">{}</a>', url, log.object_repr)
     content_object_link.short_description = _("Content object")
     content_object_link.admin_order_field = 'object_repr'
-    content_object_link.allow_tags = True
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         """ Add rel_opts and object to context """
