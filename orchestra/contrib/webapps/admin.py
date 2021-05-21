@@ -89,23 +89,8 @@ class WebAppAdmin(SelectPluginAdminMixin, AccountAdminMixin, ExtendedModelAdmin)
         try:
             return webapp.type_instance.get_detail()
         except KeyError:
-            return "<span style='color:red;'>Not available</span>"
+            return mark_safe("<span style='color:red;'>Not available</span>")
     display_detail.short_description = _("detail")
-    display_detail.allow_tags = True
 
-#    def get_form(self, request, obj=None, **kwargs):
-#        form = super(WebAppAdmin, self).get_form(request, obj, **kwargs)
-#        if obj:
-#
-
-#    def formfield_for_dbfield(self, db_field, **kwargs):
-#        """ Make value input widget bigger """
-#        if db_field.name == 'type':
-#            # Help text based on select widget
-#            kwargs['widget'] = DynamicHelpTextSelect(
-#                'this.id.replace("name", "value")', self.TYPE_HELP_TEXT
-#            )
-#            kwargs['help_text'] = self.TYPE_HELP_TEXT.get(db_field.default, '')
-#        return super(WebAppAdmin, self).formfield_for_dbfield(db_field, **kwargs)
 
 admin.site.register(WebApp, WebAppAdmin)
