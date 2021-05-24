@@ -2,7 +2,6 @@ from urllib.parse import urlparse
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.template import Context
 
 
 def render_email_template(template, context):

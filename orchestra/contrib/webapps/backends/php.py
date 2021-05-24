@@ -2,7 +2,7 @@ import os
 import textwrap
 from collections import OrderedDict
 
-from django.template import Template, Context
+from django.template import Template
 from django.utils.translation import ugettext_lazy as _
 
 from orchestra.contrib.orchestration import ServiceController
@@ -17,7 +17,7 @@ class PHPController(WebAppServiceMixin, ServiceController):
     It handles switching between these two PHP process management systemes.
     """
     MERGE = settings.WEBAPPS_MERGE_PHP_WEBAPPS
-    
+
     verbose_name = _("PHP FPM/FCGID")
     default_route_match = "webapp.type.endswith('php')"
     doc_settings = (settings, (
@@ -30,7 +30,7 @@ class PHPController(WebAppServiceMixin, ServiceController):
         'WEBAPPS_PHPFPM_POOL_PATH',
         'WEBAPPS_PHP_MAX_REQUESTS',
     ))
-    
+
     def save(self, webapp):
         self.delete_old_config(webapp)
         context = self.get_context(webapp)
@@ -81,7 +81,7 @@ class PHPController(WebAppServiceMixin, ServiceController):
             }
             """) % context
         )
-    
+
     def save_fcgid(self, webapp, context):
         self.append("mkdir -p %(wrapper_dir)s" % context)
         self.append(textwrap.dedent("""
@@ -118,7 +118,7 @@ class PHPController(WebAppServiceMixin, ServiceController):
             )
         else:
             self.append("rm -f %(cmd_options_path)s\n" % context)
-    
+
     def delete(self, webapp):
         context = self.get_context(webapp)
         self.delete_old_config(webapp)
@@ -127,13 +127,13 @@ class PHPController(WebAppServiceMixin, ServiceController):
 #        elif webapp.type_instance.is_fcgid:
 #            self.delete_fcgid(webapp, context)
         self.delete_webapp_dir(context)
-    
+
     def has_sibilings(self, webapp, context):
         return type(webapp).objects.filter(
             account=webapp.account_id,
             data__contains='"php_version":"%s"' % context['php_version'],
         ).exclude(id=webapp.pk).exists()
-    
+
     def all_versions_to_delete(self, webapp, context, preserve=False):
         context_copy = dict(context)
         for php_version, verbose in settings.WEBAPPS_PHP_VERSIONS:
@@ -144,13 +144,13 @@ class PHPController(WebAppServiceMixin, ServiceController):
             context_copy['php_version_number'] = php_version_number
             if not self.MERGE or not self.has_sibilings(webapp, context_copy):
                 yield context_copy
-    
+
     def delete_fpm(self, webapp, context, preserve=False):
         """ delete all pools in order to efectively support changing php-fpm version """
         for context_copy in self.all_versions_to_delete(webapp, context, preserve):
             context_copy['fpm_path'] = settings.WEBAPPS_PHPFPM_POOL_PATH % context_copy
             self.append("rm -f %(fpm_path)s" % context_copy)
-    
+
     def delete_fcgid(self, webapp, context, preserve=False):
         """ delete all pools in order to efectively support changing php-fcgid version """
         for context_copy in self.all_versions_to_delete(webapp, context, preserve):
@@ -160,13 +160,13 @@ class PHPController(WebAppServiceMixin, ServiceController):
             })
             self.append("rm -f %(wrapper_path)s" % context_copy)
             self.append("rm -f %(cmd_options_path)s" % context_copy)
-    
+
     def prepare(self):
         super(PHPController, self).prepare()
         self.append(textwrap.dedent("""
             BACKEND="PHPController"
             echo "$BACKEND" >> /dev/shm/reload.apache2
-            
+
             function coordinate_apache_reload () {
                 # Coordinate Apache reload with other concurrent backends (e.g. Apache2Controller)
                 is_last=0
@@ -203,7 +203,7 @@ class PHPController(WebAppServiceMixin, ServiceController):
                 fi
             }""")
         )
-    
+
     def commit(self):
         context = {
             'reload_pool': settings.WEBAPPS_PHPFPM_RELOAD_POOL,
@@ -217,7 +217,7 @@ class PHPController(WebAppServiceMixin, ServiceController):
             """) % context
         )
         super(PHPController, self).commit()
-    
+
     def get_fpm_config(self, webapp, context):
         options = webapp.type_instance.get_options()
         context.update({
@@ -231,11 +231,11 @@ class PHPController(WebAppServiceMixin, ServiceController):
             [{{ user }}-{{app_name}}]
             user = {{ user }}
             group = {{ group }}
-            
+
             listen = {{ fpm_listen | safe }}
             listen.owner = {{ user }}
             listen.group = {{ group }}
-            
+
             pm = ondemand
             pm.max_requests = {{ max_requests }}
             pm.max_children = {{ max_children }}
@@ -245,8 +245,8 @@ class PHPController(WebAppServiceMixin, ServiceController):
             php_admin_value[{{ name | safe }}] = {{ value | safe }}{% endfor %}
             """
         ))
-        return fpm_config.render(Context(context))
-    
+        return fpm_config.render(context)
+
     def get_fcgid_wrapper(self, webapp, context):
         opt = webapp.type_instance
         # Format PHP init vars
@@ -268,7 +268,7 @@ class PHPController(WebAppServiceMixin, ServiceController):
             export PHP_INI_SCAN_DIR=%(php_ini_scan)s
             export PHP_FCGI_MAX_REQUESTS=%(max_requests)s
             exec %(php_binary_path)s%(php_init_vars)s""") % context
-    
+
     def get_fcgid_cmd_options(self, webapp, context):
         options = webapp.type_instance.get_options()
         maps = OrderedDict(
@@ -288,7 +288,7 @@ class PHPController(WebAppServiceMixin, ServiceController):
             ) % context
             cmd_options.insert(0, head)
             return ' \\\n    '.join(cmd_options)
-    
+
     def update_fcgid_context(self, webapp, context):
         wrapper_path = settings.WEBAPPS_FCGID_WRAPPER_PATH % context
         context.update({
@@ -301,14 +301,14 @@ class PHPController(WebAppServiceMixin, ServiceController):
             'cmd_options_path': settings.WEBAPPS_FCGID_CMD_OPTIONS_PATH % context,
         })
         return context
-    
+
     def update_fpm_context(self, webapp, context):
         context.update({
             'fpm_config': self.get_fpm_config(webapp, context),
             'fpm_path': settings.WEBAPPS_PHPFPM_POOL_PATH % context,
         })
         return context
-    
+
     def get_context(self, webapp):
         context = super().get_context(webapp)
         context.update({

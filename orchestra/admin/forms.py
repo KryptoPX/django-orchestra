@@ -5,7 +5,7 @@ from django import forms
 from django.contrib.admin import helpers
 from django.core import validators
 from django.forms.models import modelformset_factory, BaseModelFormSet
-from django.template import Template, Context
+from django.template import Template
 from django.utils.translation import ugettext_lazy as _
 
 from orchestra.forms.widgets import SpanWidget
@@ -28,9 +28,9 @@ class AdminFormMixin(object):
             '   {% include "admin/includes/fieldset.html" %}'
             '{% endfor %}'
         )
-        context = Context({
+        context = {
             'adminform': adminform
-        })
+        }
         return template.render(context)
 
 
@@ -71,9 +71,9 @@ class AdminFormSet(BaseModelFormSet):
         </div>
         </div>""")
         )
-        context = Context({
+        context = {
             'formset': self
-        })
+        }
         return template.render(context)
 
 
@@ -93,7 +93,7 @@ class AdminPasswordChangeForm(forms.Form):
             required=False, validators=[validate_password])
     password2 = forms.CharField(label=_("Password (again)"), widget=forms.PasswordInput,
             required=False)
-    
+
     def __init__(self, user, *args, **kwargs):
         self.related = kwargs.pop('related', [])
         self.raw = kwargs.pop('raw', False)
@@ -109,7 +109,7 @@ class AdminPasswordChangeForm(forms.Form):
             self.fields['password2_%i' % ix] = forms.CharField(label=_("Password (again)"),
                 widget=forms.PasswordInput, required=False)
             setattr(self, 'clean_password2_%i' % ix, partial(self.clean_password2, ix=ix))
-    
+
     def clean_password2(self, ix=''):
         if ix != '':
             ix = '_%i' % ix
@@ -129,7 +129,7 @@ class AdminPasswordChangeForm(forms.Form):
                 code='password_mismatch',
             )
         return password2
-    
+
     def clean_password(self, ix=''):
         if ix != '':
             ix = '_%i' % ix
@@ -146,14 +146,14 @@ class AdminPasswordChangeForm(forms.Form):
                     code='bad_hash',
                 )
         return password
-    
+
     def clean(self):
         if not self.password_provided:
             raise forms.ValidationError(
                 self.error_messages['password_missing'],
                 code='password_missing',
             )
-    
+
     def save(self, commit=True):
         """
         Saves the new password.
@@ -182,7 +182,7 @@ class AdminPasswordChangeForm(forms.Form):
                 if commit:
                     rel.save(update_fields=['password'])
         return self.user
-    
+
     def _get_changed_data(self):
         data = super().changed_data
         for name in self.fields.keys():
@@ -202,7 +202,7 @@ class SendEmailForm(forms.Form):
         widget=forms.TextInput(attrs={'size': '118'}))
     message = forms.CharField(label=_("Message"),
         widget=forms.Textarea(attrs={'cols': 118, 'rows': 15}))
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         initial = kwargs.get('initial')
@@ -210,7 +210,7 @@ class SendEmailForm(forms.Form):
             self.fields['to'].widget = SpanWidget(original=initial['to'])
         else:
             self.fields.pop('to')
-    
+
     def clean_comma_separated_emails(self, value):
         clean_value = []
         for email in value.split(','):
@@ -222,7 +222,7 @@ class SendEmailForm(forms.Form):
                     raise validators.ValidationError("Comma separated email addresses.")
                 clean_value.append(email)
         return clean_value
-    
+
     def clean_extra_to(self):
         extra_to = self.cleaned_data['extra_to']
         return self.clean_comma_separated_emails(extra_to)

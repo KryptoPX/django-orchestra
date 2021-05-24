@@ -2,7 +2,7 @@ import os
 import re
 import textwrap
 
-from django.template import Template, Context
+from django.template import Template
 from django.utils.translation import ugettext_lazy as _
 
 from orchestra.contrib.orchestration import ServiceController
@@ -20,7 +20,7 @@ class Apache2Controller(ServiceController):
     """
     HTTP_PORT = 80
     HTTPS_PORT = 443
-    
+
     model = 'websites.Website'
     related_models = (
         ('websites.Content', 'website'),
@@ -37,7 +37,7 @@ class Apache2Controller(ServiceController):
         'WEBSITES_DEFAULT_IPS',
         'WEBSITES_SAAS_DIRECTIVES',
     ))
-    
+
     def get_extra_conf(self, site, context, ssl=False):
         extra_conf = self.get_content_directives(site, context)
         directives = site.get_directives()
@@ -53,7 +53,7 @@ class Apache2Controller(ServiceController):
         # Order extra conf directives based on directives (longer first)
         extra_conf = sorted(extra_conf, key=lambda a: len(a[0]), reverse=True)
         return '\n'.join([conf for location, conf in extra_conf])
-    
+
     def render_virtual_host(self, site, context, ssl=False):
         context.update({
             'port': self.HTTPS_PORT if ssl else self.HTTP_PORT,
@@ -78,8 +78,8 @@ class Apache2Controller(ServiceController):
                 {{ line | safe }}{% endfor %}
             </VirtualHost>
             """)
-        ).render(Context(context))
-    
+        ).render(context)
+
     def render_redirect_https(self, context):
         context['port'] = self.HTTP_PORT
         return Template(textwrap.dedent("""
@@ -96,8 +96,8 @@ class Apache2Controller(ServiceController):
                 RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
             </VirtualHost>
             """)
-        ).render(Context(context))
-    
+        ).render(context)
+
     def save(self, site):
         context = self.get_context(site)
         if context['server_name']:
@@ -133,7 +133,7 @@ class Apache2Controller(ServiceController):
                 [[ $(a2dissite %(site_unique_name)s) =~ "already disabled" ]] || UPDATED_APACHE=1\
                 """) % context
             )
-    
+
     def delete(self, site):
         context = self.get_context(site)
         self.append(textwrap.dedent("""
@@ -142,14 +142,14 @@ class Apache2Controller(ServiceController):
             rm -f %(sites_available)s\
             """) % context
         )
-    
+
     def prepare(self):
         super(Apache2Controller, self).prepare()
         # Coordinate apache restart with php backend in order not to overdo it
         self.append(textwrap.dedent("""
             BACKEND="Apache2Controller"
             echo "$BACKEND" >> /dev/shm/reload.apache2
-            
+
             function coordinate_apache_reload () {
                 # Coordinate Apache reload with other concurrent backends (e.g. PHPController)
                 is_last=0
@@ -186,12 +186,12 @@ class Apache2Controller(ServiceController):
                 fi
             }""")
         )
-    
+
     def commit(self):
         """ reload Apache2 if necessary """
         self.append("coordinate_apache_reload")
         super(Apache2Controller, self).commit()
-    
+
     def get_directives(self, directive, context):
         method, args = directive[0], directive[1:]
         try:
@@ -200,7 +200,7 @@ class Apache2Controller(ServiceController):
             context = (self.__class__.__name__, method)
             raise AttributeError("%s does not has suport for '%s' directive." % context)
         return method(context, *args)
-    
+
     def get_content_directives(self, site, context):
         directives = []
         for content in site.content_set.all():
@@ -208,19 +208,19 @@ class Apache2Controller(ServiceController):
             self.set_content_context(content, context)
             directives += self.get_directives(directive, context)
         return directives
-    
+
     def get_static_directives(self, context, app_path):
         context['app_path'] = os.path.normpath(app_path % context)
         directive = self.get_location_filesystem_map(context)
         return [
             (context['location'], directive),
         ]
-    
+
     def get_location_filesystem_map(self, context):
         if not context['location']:
             return 'DocumentRoot %(app_path)s' % context
         return 'Alias %(location)s %(app_path)s' % context
-    
+
     def get_fpm_directives(self, context, socket, app_path):
         if ':' in socket:
             # TCP socket
@@ -243,7 +243,7 @@ class Apache2Controller(ServiceController):
         return [
             (context['location'], directives),
         ]
-    
+
     def get_fcgid_directives(self, context, app_path, wrapper_path):
         context.update({
             'app_path': os.path.normpath(app_path),
@@ -274,7 +274,7 @@ class Apache2Controller(ServiceController):
         return [
             (context['location'], directives),
         ]
-    
+
     def get_uwsgi_directives(self, context, socket):
         # requires apache2 mod_proxy_uwsgi
         context['socket'] = socket
@@ -283,7 +283,7 @@ class Apache2Controller(ServiceController):
         return [
             (context['location'], directives),
         ]
-    
+
     def get_ssl(self, directives):
         cert = directives.get('ssl-cert')
         key = directives.get('ssl-key')
@@ -305,7 +305,7 @@ class Apache2Controller(ServiceController):
         return [
             ('', '\n'.join(ssl_config)),
         ]
-        
+
     def get_security(self, directives):
         rules = []
         location = '/'
@@ -329,7 +329,7 @@ class Apache2Controller(ServiceController):
                 </IfModule>""") % '\n    '.join(rules)
             security.append((location, rules))
         return security
-    
+
     def get_redirects(self, directives):
         redirects = []
         for redirect in directives.get('redirect', []):
@@ -342,7 +342,7 @@ class Apache2Controller(ServiceController):
                 (location, redirect)
             )
         return redirects
-    
+
     def get_proxies(self, directives):
         proxies = []
         for proxy in directives.get('proxy', []):
@@ -360,7 +360,7 @@ class Apache2Controller(ServiceController):
                 (location, proxy)
             )
         return proxies
-    
+
     def get_saas(self, directives):
         saas = []
         for name, values in directives.items():
@@ -372,20 +372,20 @@ class Apache2Controller(ServiceController):
                     directive = settings.WEBSITES_SAAS_DIRECTIVES[name]
                     saas += self.get_directives(directive, context)
         return saas
-    
+
     def get_username(self, site):
         option = site.get_directives().get('user_group')
         if option:
             return option[0]
         return site.get_username()
-    
+
     def get_groupname(self, site):
         option = site.get_directives().get('user_group')
         if option and ' ' in option:
             user, group = option.split()
             return group
         return site.get_groupname()
-    
+
     def get_server_names(self, site):
         server_name = None
         server_alias = []
@@ -395,7 +395,7 @@ class Apache2Controller(ServiceController):
             else:
                 server_alias.append(domain.name)
         return server_name, server_alias
-    
+
     def get_context(self, site):
         base_apache_conf = settings.WEBSITES_BASE_APACHE_CONF
         sites_available = os.path.join(base_apache_conf, 'sites-available')
@@ -419,7 +419,7 @@ class Apache2Controller(ServiceController):
         if not context['ips']:
             raise ValueError("WEBSITES_DEFAULT_IPS is empty.")
         return context
-    
+
     def set_content_context(self, content, context):
         content_context = {
             'type': content.webapp.type,
@@ -442,7 +442,7 @@ class Apache2Traffic(ServiceMonitor):
     doc_settings = (settings,
         ('WEBSITES_TRAFFIC_IGNORE_HOSTS',)
     )
-    
+
     def prepare(self):
         super(Apache2Traffic, self).prepare()
         ignore_hosts = '\\|'.join(settings.WEBSITES_TRAFFIC_IGNORE_HOSTS)
@@ -490,11 +490,11 @@ class Apache2Traffic(ServiceMonitor):
                             }' || [[ $? == 1 ]] && true
                 } | xargs echo ${OBJECT_ID}
             }""") % context)
-    
+
     def monitor(self, site):
         context = self.get_context(site)
         self.append('monitor {object_id} "{last_date}" {log_file}'.format(**context))
-    
+
     def get_context(self, site):
         return {
             'log_file': '%s{,.1}' % site.get_www_access_log_path(),
