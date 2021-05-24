@@ -113,21 +113,21 @@ def admin_link(*args, **kwargs):
             return '---'
     if not getattr(obj, 'pk', None):
         return '---'
-    display = kwargs.get('display')
-    if display:
-        display = getattr(obj, display, display)
+    display_ = kwargs.get('display')
+    if display_:
+        display_ = getattr(obj, display_, display_)
     else:
-        display = obj
+        display_ = obj
     try:
         url = change_url(obj)
     except NoReverseMatch:
         # Does not has admin
-        return str(display)
+        return str(display_)
     extra = ''
     if kwargs['popup']:
-        extra = 'onclick="return showAddAnotherPopup(this);"'
+        extra = mark_safe('onclick="return showAddAnotherPopup(this);"')
     title = "Change %s" % obj._meta.verbose_name
-    return mark_safe('<a href="%s" title="%s" %s>%s</a>' % (url, title, extra, display))
+    return format_html('<a href="{}" title="{}" {}>{}</a>', url, title, extra, display_)
 
 
 @admin_field
