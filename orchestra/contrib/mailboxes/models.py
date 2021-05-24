@@ -44,7 +44,7 @@ class Mailbox(models.Model):
     def active(self):
         try:
             return self.is_active and self.account.is_active
-        except type(self).account.field.model.DoesNotExist:
+        except type(self).account.field.related_model.DoesNotExist:
             return self.is_active
 
     def disable(self):

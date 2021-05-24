@@ -6,7 +6,7 @@ from django.core.validators import ValidationError, RegexValidator
 from django.db import models
 from django.db.models import F, Sum
 from django.db.models.functions import Coalesce
-from django.template import loader, Context
+from django.template import loader
 from django.utils import timezone, translation
 from django.utils.encoding import force_text
 from django.utils.functional import cached_property
@@ -303,7 +303,7 @@ class Bill(models.Model):
         with translation.override(language or self.account.language):
             if payment is False:
                 payment = self.account.paymentsources.get_default()
-            context = Context({
+            context = {
                 'bill': self,
                 'lines': self.lines.all().prefetch_related('sublines'),
                 'seller': self.seller,
@@ -318,7 +318,7 @@ class Bill(models.Model):
                 'payment': payment and payment.get_bill_context(),
                 'default_due_date': self.get_due_date(payment=payment),
                 'now': timezone.now(),
-            })
+            }
             template_name = 'BILLS_%s_TEMPLATE' % self.get_type()
             template = getattr(settings, template_name, settings.BILLS_DEFAULT_TEMPLATE)
             bill_template = loader.get_template(template)

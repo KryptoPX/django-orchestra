@@ -14,7 +14,12 @@ def retrieve_state(servers):
     state = {}
     for server, ping, uptime in zip(servers, pings, uptimes):
         ping = join(ping, silent=True)
-        ping = ping.stdout.splitlines()[-1].decode()
+
+        try:
+            ping = ping.stdout.splitlines()[-1].decode()
+        except IndexError:
+            ping = ''
+
         if ping.startswith('rtt'):
             ping = '%s ms' % ping.split('/')[4]
         else:

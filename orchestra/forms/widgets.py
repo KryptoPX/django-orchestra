@@ -17,9 +17,9 @@ class SpanWidget(forms.Widget):
         self.original = kwargs.pop('original', '')
         self.display = kwargs.pop('display', None)
         super(SpanWidget, self).__init__(*args, **kwargs)
-    
-    def render(self, name, value, attrs=None):
-        final_attrs = self.build_attrs(attrs, name=name)
+
+    def render(self, name, value, attrs=None, renderer=None):
+        final_attrs = self.build_attrs(attrs, extra_attrs={'name':name})
         original = self.original or value
         display = original if self.display is None else self.display
         # Display icon
@@ -29,25 +29,25 @@ class SpanWidget(forms.Widget):
         tag = self.tag[:-1]
         endtag = '/'.join((self.tag[0], self.tag[1:]))
         return mark_safe('%s%s >%s%s' % (tag, forms.utils.flatatt(final_attrs), display, endtag))
-    
+
     def value_from_datadict(self, data, files, name):
         return self.original
-    
+
     def _has_changed(self, initial, data):
         return False
 
 
-def paddingCheckboxSelectMultiple(padding):
+class PaddingCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
     """ Ugly hack to render this widget nicely on Django admin """
-    widget = forms.CheckboxSelectMultiple()
-    old_render = widget.render
+    def __init__(self, padding, attrs=None, choices=()):
+        super().__init__(attrs=attrs, choices=choices)
+        self.padding = padding
+
     def render(self, *args, **kwargs):
-        value = old_render(self, *args, **kwargs)
+        value = super().render(*args, **kwargs)
         value = re.sub(r'^<ul id=([^>]+)>',
-            r'<ul id=\1 style="padding-left:%ipx">' % padding, value, 1)
+            r'<ul id=\1 style="padding-left:%ipx">' % self.padding, value, 1)
         return mark_safe(value)
-    widget.render = render
-    return widget
 
 
 class DynamicHelpTextSelect(forms.Select):
@@ -61,7 +61,7 @@ class DynamicHelpTextSelect(forms.Select):
         attrs.update(kwargs.get('attrs', {}))
         kwargs['attrs'] = attrs
         super(DynamicHelpTextSelect, self).__init__(*args, **kwargs)
-    
+
     def get_dynamic_help_text(self, target, help_text):
         return textwrap.dedent("""\
             siteoptions = {help_text};

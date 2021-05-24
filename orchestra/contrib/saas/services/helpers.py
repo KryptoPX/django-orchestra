@@ -42,7 +42,7 @@ def clean_custom_url(saas):
         )
     except Website.DoesNotExist:
         # get or create domain
-        Domain = Website.domains.field.model
+        Domain = Website.domains.field.related_model
         try:
             domain = Domain.objects.get(name=url.netloc)
         except Domain.DoesNotExist:
@@ -110,7 +110,7 @@ def create_or_update_directive(saas):
             account=account,
         )
     except Website.DoesNotExist:
-        Domain = Website.domains.field.model
+        Domain = Website.domains.field.related_model
         domain = Domain.objects.get(name=url.netloc)
         # Create new website for custom_url
         tgt_server = Server.objects.get(name='web.pangea.lan')

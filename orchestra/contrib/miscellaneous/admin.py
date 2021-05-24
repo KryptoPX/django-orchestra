@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.urls import reverse
 from django.db import models
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
@@ -38,15 +39,13 @@ class MiscServiceAdmin(ExtendedModelAdmin):
     actions = (disable, enable)
 
     def display_name(self, misc):
-        return '<span title="%s">%s</span>' % (misc.description, misc.name)
+        return format_html('<span title="{}">{}</span>', misc.description, misc.name)
     display_name.short_description = _("name")
-    display_name.allow_tags = True
     display_name.admin_order_field = 'name'
 
     def display_verbose_name(self, misc):
-        return '<span title="%s">%s</span>' % (misc.description, misc.verbose_name)
+        return format_html('<span title="{}">{}</span>', misc.description, misc.verbose_name)
     display_verbose_name.short_description = _("verbose name")
-    display_verbose_name.allow_tags = True
     display_verbose_name.admin_order_field = 'verbose_name'
 
     def num_instances(self, misc):

@@ -6,6 +6,8 @@ from django.contrib import admin
 from django.urls import reverse
 from django.db.models import Count
 from django.shortcuts import redirect
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from orchestra.admin import ExtendedModelAdmin
@@ -60,11 +62,10 @@ class MessageAdmin(ExtendedModelAdmin):
     def display_subject(self, instance):
         subject = instance.subject
         if len(subject) > 64:
-            return subject[:64] + '&hellip;'
+            return mark_safe(subject[:64] + '&hellip;')
         return subject
     display_subject.short_description = _("Subject")
     display_subject.admin_order_field = 'subject'
-    display_subject.allow_tags = True
 
     def display_retries(self, instance):
         num_logs = instance.logs__count
@@ -74,10 +75,9 @@ class MessageAdmin(ExtendedModelAdmin):
         else:
             url = reverse('admin:mailer_smtplog_changelist')
             url += '?&message=%i' % instance.pk
-        return '<a href="%s" onclick="return showAddAnotherPopup(this);">%d</a>' % (url, instance.retries)
+        return format_html('<a href="{}" onclick="return showAddAnotherPopup(this);">{}</a>', url, instance.retries)
     display_retries.short_description = _("Retries")
     display_retries.admin_order_field = 'retries'
-    display_retries.allow_tags = True
 
     def display_content(self, instance):
         part = email.message_from_string(instance.content)
@@ -99,9 +99,8 @@ class MessageAdmin(ExtendedModelAdmin):
                 payload = payload.decode(charset)
         if part.get_content_type() == 'text/plain':
             payload = payload.replace('\n', '<br>').replace(' ', '&nbsp;')
-        return payload
+        return mark_safe(payload)
     display_content.short_description = _("Content")
-    display_content.allow_tags = True
 
     def display_full_subject(self, instance):
         return instance.subject

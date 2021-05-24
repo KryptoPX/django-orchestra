@@ -11,6 +11,7 @@ from django.db.models import Q
 from django.shortcuts import redirect
 from django.templatetags.static import static
 from django.utils.functional import cached_property
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ungettext, ugettext_lazy as _
 
@@ -105,10 +106,9 @@ class ResourceAdmin(ExtendedModelAdmin):
 def content_object_link(data):
     ct = data.content_type
     url = reverse('admin:%s_%s_change' % (ct.app_label, ct.model), args=(data.object_id,))
-    return '<a href="%s">%s</a>' % (url, data.content_object_repr)
+    return format_html('<a href="{}">{}</a>', url, data.content_object_repr)
 content_object_link.short_description = _("Content object")
 content_object_link.admin_order_field = 'content_object_repr'
-content_object_link.allow_tags = True
 
 
 class ResourceDataAdmin(ExtendedModelAdmin):
@@ -155,10 +155,9 @@ class ResourceDataAdmin(ExtendedModelAdmin):
         if rdata.used is None:
             return ''
         url = reverse('admin:resources_resourcedata_used_monitordata', args=(rdata.pk,))
-        return '<a href="%s">%s %s</a>' % (url, rdata.used, rdata.unit)
+        return format_html('<a href="{}">{} {}</a>', url, rdata.used, rdata.unit)
     display_used.short_description = _("Used")
     display_used.admin_order_field = 'used'
-    display_used.allow_tags = True
 
     def has_add_permission(self, *args, **kwargs):
         return False
@@ -304,6 +303,7 @@ def resource_inline_factory(resources):
                 self.verbose_name_plural = mark_safe(_("Resources") + ' ' + link)
             return super(ResourceInline, self).get_fieldsets(request, obj)
 
+        @mark_safe
         def display_used(self, rdata):
             update = ''
             history = ''
@@ -329,7 +329,6 @@ def resource_inline_factory(resources):
                 return _("Unknonw %s %s") % (update, history)
             return _("No monitor")
         display_used.short_description = _("Used")
-        display_used.allow_tags = True
 
         def has_add_permission(self, *args, **kwargs):
             """ Hidde add another """

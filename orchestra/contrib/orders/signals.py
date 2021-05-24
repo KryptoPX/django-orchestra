@@ -15,7 +15,7 @@ def cancel_orders(sender, **kwargs):
     if sender._meta.app_label not in settings.ORDERS_EXCLUDED_APPS:
         instance = kwargs['instance']
         # Account delete will delete all related orders, no need to maintain order consistency
-        if isinstance(instance, Order.account.field.model):
+        if isinstance(instance, Order.account.field.related_model):
             return
         if type(instance) in services:
             for order in Order.objects.by_object(instance).active():

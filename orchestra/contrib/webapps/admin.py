@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.encoding import force_text
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext, ugettext_lazy as _
 
 from orchestra.admin import ExtendedModelAdmin
@@ -66,6 +67,7 @@ class WebAppAdmin(SelectPluginAdminMixin, AccountAdminMixin, ExtendedModelAdmin)
 
     display_type = display_plugin_field('type')
 
+    @mark_safe
     def display_websites(self, webapp):
         websites = []
         for content in webapp.content_set.all():
@@ -82,29 +84,13 @@ class WebAppAdmin(SelectPluginAdminMixin, AccountAdminMixin, ExtendedModelAdmin)
             websites.append('<a href="%s">%s%s</a>' % (add_url, plus, ugettext("Add website")))
         return '<br>'.join(websites)
     display_websites.short_description = _("web sites")
-    display_websites.allow_tags = True
 
     def display_detail(self, webapp):
         try:
             return webapp.type_instance.get_detail()
         except KeyError:
-            return "<span style='color:red;'>Not available</span>"
+            return mark_safe("<span style='color:red;'>Not available</span>")
     display_detail.short_description = _("detail")
-    display_detail.allow_tags = True
 
-#    def get_form(self, request, obj=None, **kwargs):
-#        form = super(WebAppAdmin, self).get_form(request, obj, **kwargs)
-#        if obj:
-#
-
-#    def formfield_for_dbfield(self, db_field, **kwargs):
-#        """ Make value input widget bigger """
-#        if db_field.name == 'type':
-#            # Help text based on select widget
-#            kwargs['widget'] = DynamicHelpTextSelect(
-#                'this.id.replace("name", "value")', self.TYPE_HELP_TEXT
-#            )
-#            kwargs['help_text'] = self.TYPE_HELP_TEXT.get(db_field.default, '')
-#        return super(WebAppAdmin, self).formfield_for_dbfield(db_field, **kwargs)
 
 admin.site.register(WebApp, WebAppAdmin)

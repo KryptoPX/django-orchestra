@@ -6,6 +6,7 @@ from django.contrib import admin, messages
 from django.urls import reverse
 from django.db.models import F, Count, Value as V
 from django.db.models.functions import Concat
+from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
@@ -82,6 +83,7 @@ class MailboxAdmin(ChangePasswordAdminMixin, SelectAccountAdminMixin, ExtendedMo
         if settings.MAILBOXES_LOCAL_DOMAIN:
             type(self).actions = self.actions + (SendMailboxEmail(),)
 
+    @mark_safe
     def display_addresses(self, mailbox):
         # Get from forwards
         cache = caches.get_request_cache()
@@ -93,7 +95,7 @@ class MailboxAdmin(ChangePasswordAdminMixin, SelectAccountAdminMixin, ExtendedMo
             qs = qs.values_list('id', 'email', 'forward')
             for addr_id, email, mbox in qs:
                 url = reverse('admin:mailboxes_address_change', args=(addr_id,))
-                link = '<a href="%s">%s</a>' % (url, email)
+                link = format_html('<a href="{}">{}</a>', url, email)
                 try:
                     cached_forwards[mbox].append(link)
                 except KeyError:
@@ -107,26 +109,23 @@ class MailboxAdmin(ChangePasswordAdminMixin, SelectAccountAdminMixin, ExtendedMo
         addresses = []
         for addr in mailbox.addresses.all():
             url = change_url(addr)
-            addresses.append('<a href="%s">%s</a>' % (url, addr.email))
+            addresses.append(format_html('<a href="{}">{}</a>', url, addr.email))
         return '<br>'.join(addresses+forwards)
     display_addresses.short_description = _("Addresses")
-    display_addresses.allow_tags = True
 
     def display_forwards(self, mailbox):
-        forwards = []
-        for addr in mailbox.get_forwards():
-            url = change_url(addr)
-            forwards.append('<a href="%s">%s</a>' % (url, addr.email))
-        return '<br>'.join(forwards)
+        forwards = mailbox.get_forwards()
+        return format_html_join(
+            '<br>', '<a href="{}">{}</a>',
+            [(change_url(addr), addr.email) for addr in forwards]
+        )
     display_forwards.short_description = _("Forward from")
-    display_forwards.allow_tags = True
 
+    @mark_safe
     def display_filtering(self, mailbox):
-        """ becacuse of allow_tags = True """
         return mailbox.get_filtering_display()
     display_filtering.short_description = _("Filtering")
     display_filtering.admin_order_field = 'filtering'
-    display_filtering.allow_tags = True
 
     def formfield_for_dbfield(self, db_field, **kwargs):
         if db_field.name == 'filtering':
@@ -217,7 +216,7 @@ class MailboxAdmin(ChangePasswordAdminMixin, SelectAccountAdminMixin, ExtendedMo
             elif obj.custom_filtering:
                 messages.warning(request, msg)
         super(MailboxAdmin, self).save_model(request, obj, form, change)
-        obj.addresses = form.cleaned_data['addresses']
+        obj.addresses.set(form.cleaned_data['addresses'])
 
 
 class AddressAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
@@ -247,29 +246,27 @@ class AddressAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
 
     def email_link(self, address):
         link = self.domain_link(address)
-        return "%s@%s" % (address.name, link)
+        return format_html("{}@{}", address.name, link)
     email_link.short_description = _("Email")
-    email_link.allow_tags = True
 
     def display_mailboxes(self, address):
-        boxes = []
-        for mailbox in address.mailboxes.all():
-            url = change_url(mailbox)
-            boxes.append('<a href="%s">%s</a>' % (url, mailbox.name))
-        return '<br>'.join(boxes)
+        boxes = address.mailboxes.all()
+        return format_html_join(
+            '<br>', '<a href="{}">{}</a>',
+            [(change_url(mailbox), mailbox.name) for mailbox in boxes]
+        )
     display_mailboxes.short_description = _("Mailboxes")
-    display_mailboxes.allow_tags = True
     display_mailboxes.admin_order_field = 'mailboxes__count'
 
     def display_all_mailboxes(self, address):
-        boxes = []
-        for mailbox in address.get_mailboxes():
-            url = change_url(mailbox)
-            boxes.append('<a href="%s">%s</a>' % (url, mailbox.name))
-        return '<br>'.join(boxes)
+        boxes = address.get_mailboxes()
+        return format_html_join(
+            '<br>', '<a href="{}">{}</a>',
+            [(change_url(mailbox), mailbox.name) for mailbox in boxes]
+        )
     display_all_mailboxes.short_description = _("Mailboxes links")
-    display_all_mailboxes.allow_tags = True
 
+    @mark_safe
     def display_forward(self, address):
         forward_mailboxes = {m.name: m for m in address.get_forward_mailboxes()}
         values = []
@@ -281,7 +278,6 @@ class AddressAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
                 values.append(forward)
         return '<br>'.join(values)
     display_forward.short_description = _("Forward")
-    display_forward.allow_tags = True
     display_forward.admin_order_field = 'forward'
 
     def formfield_for_dbfield(self, db_field, **kwargs):

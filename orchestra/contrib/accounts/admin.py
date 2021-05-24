@@ -158,6 +158,7 @@ class AccountListAdmin(AccountAdmin):
     actions = None
     change_list_template = 'admin/accounts/account/select_account_list.html'
 
+    @mark_safe
     def select_account(self, instance):
         # TODO get query string from request.META['QUERY_STRING'] to preserve filters
         context = {
@@ -167,7 +168,6 @@ class AccountListAdmin(AccountAdmin):
         }
         return _('<a href="%(url)s">%(plus)s Add to %(name)s</a>') % context
     select_account.short_description = _("account")
-    select_account.allow_tags = True
     select_account.admin_order_field = 'username'
 
     def changelist_view(self, request, extra_context=None):
@@ -207,6 +207,7 @@ class AccountAdminMixin(object):
     account = None
     list_select_related = ('account',)
 
+    @mark_safe
     def display_active(self, instance):
         if not instance.is_active:
             return '<img src="%s" alt="False">' % static('admin/img/icon-no.svg')
@@ -215,14 +216,12 @@ class AccountAdminMixin(object):
             return '<img style="width:13px" src="%s" alt="False" title="%s">' % (static('admin/img/inline-delete.svg'), msg)
         return '<img src="%s" alt="False">' % static('admin/img/icon-yes.svg')
     display_active.short_description = _("active")
-    display_active.allow_tags = True
     display_active.admin_order_field = 'is_active'
 
     def account_link(self, instance):
         account = instance.account if instance.pk else self.account
         return admin_link()(account)
     account_link.short_description = _("account")
-    account_link.allow_tags = True
     account_link.admin_order_field = 'account__username'
 
     def get_form(self, request, obj=None, **kwargs):

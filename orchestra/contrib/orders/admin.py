@@ -1,9 +1,10 @@
+from datetime import datetime
 from django import forms
 from django.contrib import admin
 from django.urls import reverse, NoReverseMatch
 from django.db.models import Prefetch
 from django.utils import timezone
-from django.utils.html import escape
+from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
@@ -112,9 +113,8 @@ class OrderAdmin(AccountAdminMixin, ExtendedModelAdmin):
     display_cancelled_on = admin_date('cancelled_on')
 
     def display_description(self, order):
-        return order.description[:64]
+        return format_html(order.description[:64])
     display_description.short_description = _("Description")
-    display_description.allow_tags = True
     display_description.admin_order_field = 'description'
 
     def content_object_link(self, order):
@@ -125,13 +125,13 @@ class OrderAdmin(AccountAdminMixin, ExtendedModelAdmin):
                 # Does not has admin
                 return order.content_object_repr
             description = str(order.content_object)
-            return '<a href="{url}">{description}</a>'.format(
+            return format_html('<a href="{url}">{description}</a>',
                 url=url, description=description)
         return order.content_object_repr
     content_object_link.short_description = _("Content object")
-    content_object_link.allow_tags = True
     content_object_link.admin_order_field = 'content_object_repr'
 
+    @mark_safe
     def bills_links(self, order):
         bills = []
         make_link = admin_link()
@@ -139,7 +139,6 @@ class OrderAdmin(AccountAdminMixin, ExtendedModelAdmin):
             bills.append(make_link(line.bill))
         return '<br>'.join(bills)
     bills_links.short_description = _("Bills")
-    bills_links.allow_tags = True
 
     def display_billed_until(self, order):
         billed_until = order.billed_until
@@ -156,12 +155,12 @@ class OrderAdmin(AccountAdminMixin, ExtendedModelAdmin):
                     red = True
             elif billed_until < timezone.now().date():
                 red = True
-        color = 'style="color:red;"' if red else ''
-        return '<span title="{raw}" {color}>{human}</span>'.format(
+        color = mark_safe('style="color:red;"') if red else ''
+        return format_html(
+            '<span title="{raw}" {color}>{human}</span>',
             raw=escape(str(billed_until)), color=color, human=human,
         )
     display_billed_until.short_description = _("billed until")
-    display_billed_until.allow_tags = True
     display_billed_until.admin_order_field = 'billed_until'
 
     def display_metric(self, order):

@@ -12,7 +12,7 @@ from .models import List
 
 class RelatedDomainSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSerializer):
     class Meta:
-        model = List.address_domain.field.model
+        model = List.address_domain.field.related_model
         fields = ('url', 'id', 'name')
 
 

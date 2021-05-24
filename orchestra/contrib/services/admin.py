@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.template.response import TemplateResponse
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 
 from orchestra.admin import ChangeViewActionsMixin
@@ -69,10 +70,9 @@ class ServiceAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
         num = service.orders__count
         url = reverse('admin:orders_order_changelist')
         url += '?service__id__exact=%i&is_active=True' % service.pk
-        return '<a href="%s">%d</a>' % (url, num)
+        return format_html('<a href="{}">{}</a>', url, num)
     num_orders.short_description = _("Orders")
     num_orders.admin_order_field = 'orders__count'
-    num_orders.allow_tags = True
 
     def get_queryset(self, request):
         qs = super(ServiceAdmin, self).get_queryset(request)

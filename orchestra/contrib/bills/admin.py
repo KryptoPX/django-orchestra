@@ -7,6 +7,7 @@ from django.db import models
 from django.db.models import F, Sum, Prefetch
 from django.db.models.functions import Coalesce
 from django.templatetags.static import static
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import redirect
@@ -15,7 +16,7 @@ from orchestra.admin import ExtendedModelAdmin
 from orchestra.admin.utils import admin_date, insertattr, admin_link, change_url
 from orchestra.contrib.accounts.actions import list_accounts
 from orchestra.contrib.accounts.admin import AccountAdminMixin, AccountAdmin
-from orchestra.forms.widgets import paddingCheckboxSelectMultiple
+from orchestra.forms.widgets import PaddingCheckboxSelectMultiple
 
 from . import settings, actions
 from .filters import (BillTypeListFilter, HasBillContactListFilter, TotalListFilter,
@@ -67,6 +68,7 @@ class BillLineInline(admin.TabularInline):
 
     order_link = admin_link('order', display='pk')
 
+    @mark_safe
     def display_total(self, line):
         if line.pk:
             total = line.compute_total()
@@ -78,7 +80,6 @@ class BillLineInline(admin.TabularInline):
                 return '<a href="%s" title="%s">%s <img src="%s"></img></a>' % (url, content, total, img)
             return '<a href="%s">%s</a>' % (url, total)
     display_total.short_description = _("Total")
-    display_total.allow_tags = True
 
     def formfield_for_dbfield(self, db_field, **kwargs):
         """ Make value input widget bigger """
@@ -104,27 +105,26 @@ class ClosedBillLineInline(BillLineInline):
     readonly_fields = fields
     can_delete = False
 
+    @mark_safe
     def display_description(self, line):
         descriptions = [line.description]
         for subline in line.sublines.all():
-            descriptions.append('&nbsp;'*4+subline.description)
+            descriptions.append('&nbsp;' * 4 + subline.description)
         return '<br>'.join(descriptions)
     display_description.short_description = _("Description")
-    display_description.allow_tags = True
 
+    @mark_safe
     def display_subtotal(self, line):
         subtotals = ['&nbsp;' + str(line.subtotal)]
         for subline in line.sublines.all():
             subtotals.append(str(subline.total))
         return '<br>'.join(subtotals)
     display_subtotal.short_description = _("Subtotal")
-    display_subtotal.allow_tags = True
 
     def display_total(self, line):
         if line.pk:
             return line.compute_total()
     display_total.short_description = _("Total")
-    display_total.allow_tags = True
 
     def has_add_permission(self, request):
         return False
@@ -242,6 +242,7 @@ class BillLineManagerAdmin(BillLineAdmin):
 
 
 class BillAdminMixin(AccountAdminMixin):
+    @mark_safe
     def display_total_with_subtotals(self, bill):
         if bill.pk:
             currency = settings.BILLS_CURRENCY.lower()
@@ -251,10 +252,10 @@ class BillAdminMixin(AccountAdminMixin):
                 subtotals.append(_("Taxes %s%% VAT   %s &%s;") % (tax, subtotal[1], currency))
             subtotals = '\n'.join(subtotals)
             return '<span title="%s">%s &%s;</span>' % (subtotals, bill.compute_total(), currency)
-    display_total_with_subtotals.allow_tags = True
     display_total_with_subtotals.short_description = _("total")
     display_total_with_subtotals.admin_order_field = 'approx_total'
 
+    @mark_safe
     def display_payment_state(self, bill):
         if bill.pk:
             t_opts = bill.transactions.model._meta
@@ -276,7 +277,6 @@ class BillAdminMixin(AccountAdminMixin):
             color = PAYMENT_STATE_COLORS.get(bill.payment_state, 'grey')
             return '<a href="{url}" style="color:{color}" title="{title}">{name}</a>'.format(
                 url=url, color=color, name=state, title=title)
-    display_payment_state.allow_tags = True
     display_payment_state.short_description = _("Payment")
 
     def get_queryset(self, request):
@@ -376,16 +376,14 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
 
     def display_total(self, bill):
         currency = settings.BILLS_CURRENCY.lower()
-        return '%s &%s;' % (bill.compute_total(), currency)
-    display_total.allow_tags = True
+        return format_html('{} &{};', bill.compute_total(), currency)
     display_total.short_description = _("total")
     display_total.admin_order_field = 'approx_total'
 
     def type_link(self, bill):
         bill_type = bill.type.lower()
         url = reverse('admin:bills_%s_changelist' % bill_type)
-        return '<a href="%s">%s</a>' % (url, bill.get_type_display())
-    type_link.allow_tags = True
+        return format_html('<a href="{}">{}</a>', url, bill.get_type_display())
     type_link.short_description = _("type")
     type_link.admin_order_field = 'type'
 
@@ -479,7 +477,7 @@ class BillContactInline(admin.StackedInline):
         if db_field.name == 'address':
             kwargs['widget'] = forms.Textarea(attrs={'cols': 70, 'rows': 2})
         if db_field.name == 'email_usage':
-            kwargs['widget'] = paddingCheckboxSelectMultiple(45)
+            kwargs['widget'] = PaddingCheckboxSelectMultiple(45)
         return super().formfield_for_dbfield(db_field, **kwargs)
 
 

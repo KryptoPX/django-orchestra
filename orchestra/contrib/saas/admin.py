@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from orchestra.admin import ExtendedModelAdmin, ChangePasswordAdminMixin
@@ -26,7 +27,8 @@ class SaaSAdmin(SelectPluginAdminMixin, ChangePasswordAdminMixin, AccountAdminMi
     plugin_field = 'service'
     plugin_title = 'Software as a Service'
     actions = (disable, enable, list_accounts)
-    
+
+    @mark_safe
     def display_url(self, saas):
         site_domain = saas.get_site_domain()
         site_link = '<a href="http://%s">%s</a>' % (site_domain, site_domain)
@@ -46,9 +48,8 @@ class SaaSAdmin(SelectPluginAdminMixin, ChangePasswordAdminMixin, AccountAdminMi
             links.append(link)
         return '<br>'.join(links)
     display_url.short_description = _("URL")
-    display_url.allow_tags = True
     display_url.admin_order_field = 'name'
-    
+
     def get_fields(self, *args, **kwargs):
         fields = super(SaaSAdmin, self).get_fields(*args, **kwargs)
         if not self.plugin_instance.allow_custom_url:

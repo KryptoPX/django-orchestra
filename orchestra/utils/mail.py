@@ -2,7 +2,6 @@ from urllib.parse import urlparse
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.template import Context
 
 
 def render_email_template(template, context):
@@ -10,12 +9,9 @@ def render_email_template(template, context):
     Renders an email template with this format:
         {% if subject %}Subject{% endif %}
         {% if message %}Email body{% endif %}
-    
-    context can be a dictionary or a template.Context instance
+
+    context must be a dict
     """
-    if isinstance(context, dict):
-        context = Context(context)
-    
     if not 'site' in context:
         from orchestra import settings
         url = urlparse(settings.ORCHESTRA_SITE_URL)

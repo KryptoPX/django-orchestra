@@ -1,6 +1,6 @@
 from django import forms
 
-from orchestra.forms.widgets import SpanWidget, paddingCheckboxSelectMultiple
+from orchestra.forms.widgets import SpanWidget, PaddingCheckboxSelectMultiple
 
 
 class RouteForm(forms.ModelForm):
@@ -16,5 +16,5 @@ class RouteForm(forms.ModelForm):
             else:
                 self.fields['backend'].widget = SpanWidget()
                 actions = backend_class.actions
-                self.fields['async_actions'].widget = paddingCheckboxSelectMultiple(45)
+                self.fields['async_actions'].widget = PaddingCheckboxSelectMultiple(45)
                 self.fields['async_actions'].choices = ((action, action) for action in actions)

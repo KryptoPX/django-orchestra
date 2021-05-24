@@ -175,7 +175,7 @@ def delete_related_services(modeladmin, request, queryset):
     for model, objs in collector.model_objs.items():
         count = 0
         # discount main systemuser
-        if model is modeladmin.model.main_systemuser.field.model:
+        if model is modeladmin.model.main_systemuser.field.related_model:
             count = len(objs) - 1
         # Discount account
         elif model is not modeladmin.model and model in registered_services:
