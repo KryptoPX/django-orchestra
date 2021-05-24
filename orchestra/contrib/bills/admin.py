@@ -105,27 +105,26 @@ class ClosedBillLineInline(BillLineInline):
     readonly_fields = fields
     can_delete = False
 
+    @mark_safe
     def display_description(self, line):
         descriptions = [line.description]
         for subline in line.sublines.all():
-            descriptions.append('&nbsp;'*4+subline.description)
+            descriptions.append('&nbsp;' * 4 + subline.description)
         return '<br>'.join(descriptions)
     display_description.short_description = _("Description")
-    display_description.allow_tags = True
 
+    @mark_safe
     def display_subtotal(self, line):
         subtotals = ['&nbsp;' + str(line.subtotal)]
         for subline in line.sublines.all():
             subtotals.append(str(subline.total))
         return '<br>'.join(subtotals)
     display_subtotal.short_description = _("Subtotal")
-    display_subtotal.allow_tags = True
 
     def display_total(self, line):
         if line.pk:
             return line.compute_total()
     display_total.short_description = _("Total")
-    display_total.allow_tags = True
 
     def has_add_permission(self, request):
         return False
@@ -253,7 +252,6 @@ class BillAdminMixin(AccountAdminMixin):
                 subtotals.append(_("Taxes %s%% VAT   %s &%s;") % (tax, subtotal[1], currency))
             subtotals = '\n'.join(subtotals)
             return '<span title="%s">%s &%s;</span>' % (subtotals, bill.compute_total(), currency)
-    display_total_with_subtotals.allow_tags = True
     display_total_with_subtotals.short_description = _("total")
     display_total_with_subtotals.admin_order_field = 'approx_total'
 
@@ -279,7 +277,6 @@ class BillAdminMixin(AccountAdminMixin):
             color = PAYMENT_STATE_COLORS.get(bill.payment_state, 'grey')
             return '<a href="{url}" style="color:{color}" title="{title}">{name}</a>'.format(
                 url=url, color=color, name=state, title=title)
-    display_payment_state.allow_tags = True
     display_payment_state.short_description = _("Payment")
 
     def get_queryset(self, request):
@@ -380,7 +377,6 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
     def display_total(self, bill):
         currency = settings.BILLS_CURRENCY.lower()
         return format_html('{} &{};', bill.compute_total(), currency)
-    display_total.allow_tags = True
     display_total.short_description = _("total")
     display_total.admin_order_field = 'approx_total'
 
@@ -388,7 +384,6 @@ class BillAdmin(BillAdminMixin, ExtendedModelAdmin):
         bill_type = bill.type.lower()
         url = reverse('admin:bills_%s_changelist' % bill_type)
         return format_html('<a href="{}">{}</a>', url, bill.get_type_display())
-    type_link.allow_tags = True
     type_link.short_description = _("type")
     type_link.admin_order_field = 'type'
 

@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import reverse
 from django.http import HttpResponseRedirect
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from orchestra.admin import ChangeViewActionsMixin, ExtendedModelAdmin
@@ -154,6 +156,7 @@ class TransactionAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
                 return []
         return [action for action in actions if action.__name__ not in exclude]
 
+    @mark_safe
     def display_state(self, obj):
         state = admin_colored('state', colors=STATE_COLORS)(obj)
         help_text = obj.get_state_help()
@@ -161,7 +164,6 @@ class TransactionAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
         return state
     display_state.admin_order_field = 'state'
     display_state.short_description = _("State")
-    display_state.allow_tags = True
 
 
 class TransactionProcessAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
@@ -184,10 +186,10 @@ class TransactionProcessAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
 
     def file_url(self, process):
         if process.file:
-            return '<a href="%s">%s</a>' % (process.file.url, process.file.name)
-    file_url.allow_tags = True
+            return format_html('<a href="{}">{}</a>', process.file.url, process.file.name)
     file_url.admin_order_field = 'file'
 
+    @mark_safe
     def display_transactions(self, process):
         ids = []
         lines = []
@@ -207,7 +209,6 @@ class TransactionProcessAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
         url += '?process_id=%i' % process.id
         return '<a href="%s">%s</a>' % (url, transactions)
     display_transactions.short_description = _("Transactions")
-    display_transactions.allow_tags = True
 
     def has_add_permission(self, *args, **kwargs):
         return False
