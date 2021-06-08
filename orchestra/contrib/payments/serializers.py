@@ -10,7 +10,7 @@ class PaymentSourceSerializer(AccountSerializerMixin, serializers.HyperlinkedMod
     class Meta:
         model = PaymentSource
         fields = ('url', 'id', 'method', 'data', 'is_active')
-    
+
     def validate(self, data):
         """ validate data according to method """
         data = super(PaymentSourceSerializer, self).validate(data)
@@ -20,7 +20,7 @@ class PaymentSourceSerializer(AccountSerializerMixin, serializers.HyperlinkedMod
         if not serializer.is_valid():
             raise serializers.ValidationError(serializer.errors)
         return data
-    
+
     def transform_data(self, obj, value):
         if not obj:
             return {}
@@ -29,7 +29,7 @@ class PaymentSourceSerializer(AccountSerializerMixin, serializers.HyperlinkedMod
             serializer_class = plugin().get_serializer()
             return serializer_class().to_native(obj.data)
         return obj.data
-    
+
     # TODO
     def metadata(self):
         meta = super(PaymentSourceSerializer, self).metadata()
@@ -43,3 +43,4 @@ class PaymentSourceSerializer(AccountSerializerMixin, serializers.HyperlinkedMod
 class TransactionSerializer(AccountSerializerMixin, serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Transaction
+        exclude = ('process',)
