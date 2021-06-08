@@ -18,33 +18,33 @@ class LogApiMixin(object):
         message = _('Added.')
         self.log(request, message, ADDITION, instance=self.serializer.instance)
         return response
-    
+
     def perform_create(self, serializer):
         """ stores serializer for accessing instance on create() """
         super(LogApiMixin, self).perform_create(serializer)
         self.serializer = serializer
-    
+
     def update(self, request, *args, **kwargs):
         from django.contrib.admin.models import CHANGE
         response = super(LogApiMixin, self).update(request, *args, **kwargs)
         message = _('Changed data')
         self.log(request, message, CHANGE)
         return response
-    
+
     def partial_update(self, request, *args, **kwargs):
         from django.contrib.admin.models import CHANGE
         response = super(LogApiMixin, self).partial_update(request, *args, **kwargs)
         message = _('Changed %s') % response.data
         self.log(request, message, CHANGE)
         return response
-    
+
     def destroy(self, request, *args, **kwargs):
         from django.contrib.admin.models import DELETION
         message = _('Deleted')
         self.log(request, message, DELETION)
         response = super(LogApiMixin, self).destroy(request, *args, **kwargs)
         return response
-    
+
     def log(self, request, message, action, instance=None):
         from django.contrib.admin.models import LogEntry
         instance = instance or self.get_object()
@@ -64,21 +64,21 @@ class LinkHeaderRouter(DefaultRouter):
         APIRoot = import_class(settings.ORCHESTRA_API_ROOT_VIEW)
         APIRoot.router = self
         return APIRoot.as_view()
-    
+
     def register(self, prefix, viewset, base_name=None):
         """ inserts link headers on every viewset """
         if base_name is None:
-            base_name = self.get_default_base_name(viewset)
+            base_name = self.get_default_basename(viewset)
         insert_links(viewset, base_name)
         self.registry.append((prefix, viewset, base_name))
-    
+
     def get_viewset(self, prefix_or_model):
         for _prefix, viewset, __ in self.registry:
             if _prefix == prefix_or_model or viewset.queryset.model == prefix_or_model:
                 return viewset
         msg = "%s does not have a regiestered viewset" % prefix_or_model
         raise KeyError(msg)
-    
+
     def insert(self, prefix_or_model, name, field, **kwargs):
         """ Dynamically add new fields to an existing serializer """
         viewset = self.get_viewset(prefix_or_model)
