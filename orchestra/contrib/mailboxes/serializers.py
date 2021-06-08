@@ -8,7 +8,7 @@ from .models import Mailbox, Address
 
 class RelatedDomainSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSerializer):
     class Meta:
-        model = Address.domain.field.model
+        model = Address.domain.field.related_model
         fields = ('url', 'id', 'name')
 
 
