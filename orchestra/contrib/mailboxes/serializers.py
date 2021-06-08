@@ -54,3 +54,13 @@ class AddressSerializer(AccountSerializerMixin, serializers.HyperlinkedModelSeri
         if not attrs['mailboxes'] and not attrs['forward']:
             raise serializers.ValidationError("A mailbox or forward address should be provided.")
         return attrs
+
+    def create(self, validated_data):
+        mailboxes = validated_data.pop('mailboxes')
+
+        # assign address to same account than domain
+        account = validated_data['domain'].account
+        obj = self.Meta.model.objects.create(account=account, **validated_data)
+
+        obj.mailboxes.set(mailboxes)
+        return obj
