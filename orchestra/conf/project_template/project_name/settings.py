@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'admin_tools.dashboard',
     'rest_framework',
     'rest_framework.authtoken',
+    'django_filters',
     'passlib.ext.django',
     'django_countries',
 #    'debug_toolbar',
