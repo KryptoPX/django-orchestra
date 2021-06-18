@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from orchestra.api.serializers import SetPasswordHyperlinkedSerializer, RelatedHyperlinkedModelSerializer
@@ -43,7 +44,7 @@ class RelatedMailboxSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSe
 
 class AddressSerializer(AccountSerializerMixin, serializers.HyperlinkedModelSerializer):
     domain = RelatedDomainSerializer()
-    mailboxes = RelatedMailboxSerializer(many=True, required=False) #allow_add_remove=True
+    mailboxes = RelatedMailboxSerializer(many=True, required=False)
 
     class Meta:
         model = Address
@@ -51,16 +52,21 @@ class AddressSerializer(AccountSerializerMixin, serializers.HyperlinkedModelSeri
 
     def validate(self, attrs):
         attrs = super(AddressSerializer, self).validate(attrs)
-        if not attrs['mailboxes'] and not attrs['forward']:
+        mailboxes = attrs.get('mailboxes', [])
+        forward = attrs.get('forward', '')
+        if not mailboxes and not forward:
             raise serializers.ValidationError("A mailbox or forward address should be provided.")
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
-        mailboxes = validated_data.pop('mailboxes')
-
-        # assign address to same account than domain
-        account = validated_data['domain'].account
-        obj = self.Meta.model.objects.create(account=account, **validated_data)
-
+        mailboxes = validated_data.pop('mailboxes', [])
+        obj = super().create(validated_data)
         obj.mailboxes.set(mailboxes)
         return obj
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        mailboxes = validated_data.pop('mailboxes', [])
+        instance.mailboxes.set(mailboxes)
+        return super().update(instance, validated_data)
