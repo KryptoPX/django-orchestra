@@ -1,10 +1,10 @@
-from django.core.management.base import NoArgsCommand
+from django.core.management.base import BaseCommand
 
 from orchestra import get_version
 
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
     help = 'Shows django-orchestra version'
 
-    def handle_noargs(self, **options):
+    def handle(self, *args, **options):
         self.stdout.write(get_version())
