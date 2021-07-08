@@ -179,7 +179,7 @@ class TransactionProcessAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
     change_view_actions = (
         actions.mark_process_as_executed, actions.abort, actions.commit, actions.report
     )
-    actions = change_view_actions + (actions.delete_selected,)
+    actions = change_view_actions
 
     display_state = admin_colored('state', colors=PROCESS_STATE_COLORS)
     display_created_at = admin_date('created_at', short_description=_("Created"))
@@ -232,6 +232,13 @@ class TransactionProcessAdmin(ChangeViewActionsMixin, admin.ModelAdmin):
         if isinstance(response, HttpResponseRedirect):
             helpers.post_delete_processes(self, request, related_transactions)
         return response
+
+    def delete_queryset(self, request, queryset):
+        # override default admin action delete behaviour
+        related_transactions = helpers.pre_delete_processes(self, request, queryset)
+        super().delete_queryset(self, request, queryset)
+        helpers.post_delete_processes(self, request, related_transactions)
+
 
 admin.site.register(PaymentSource, PaymentSourceAdmin)
 admin.site.register(Transaction, TransactionAdmin)
