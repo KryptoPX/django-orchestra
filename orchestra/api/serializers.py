@@ -17,7 +17,7 @@ class SetPasswordSerializer(serializers.Serializer):
 
 class HyperlinkedModelSerializer(serializers.HyperlinkedModelSerializer):
     """ support for postonly_fields, fields whose value can only be set on post """
-    
+
     def validate(self, attrs):
         """ calls model.clean() """
         attrs = super(HyperlinkedModelSerializer, self).validate(attrs)
@@ -39,7 +39,7 @@ class HyperlinkedModelSerializer(serializers.HyperlinkedModelSerializer):
             instance = ModelClass(**validated_data)
         instance.clean()
         return attrs
-    
+
     def post_only_cleanning(self, instance, validated_data):
         """ removes postonly_fields from attrs """
         model_attrs = dict(**validated_data)
@@ -49,12 +49,12 @@ class HyperlinkedModelSerializer(serializers.HyperlinkedModelSerializer):
                 if attr in post_only_fields:
                     model_attrs.pop(attr)
         return model_attrs
-    
+
     def update(self, instance, validated_data):
         """ removes postonly_fields from attrs when not posting """
         model_attrs = self.post_only_cleanning(instance, validated_data)
         return super(HyperlinkedModelSerializer, self).update(instance, model_attrs)
-    
+
     def partial_update(self, instance, validated_data):
         """ removes postonly_fields from attrs when not posting """
         model_attrs = self.post_only_cleanning(instance, validated_data)
@@ -64,7 +64,10 @@ class HyperlinkedModelSerializer(serializers.HyperlinkedModelSerializer):
 class RelatedHyperlinkedModelSerializer(HyperlinkedModelSerializer):
     """ returns object on to_internal_value based on URL """
     def to_internal_value(self, data):
-        url = data.get('url')
+        try:
+            url = data.get('url')
+        except AttributeError:
+            url = None
         if not url:
             raise ValidationError({
                 'url': "URL is required."
@@ -80,7 +83,7 @@ class SetPasswordHyperlinkedSerializer(HyperlinkedModelSerializer):
     password = serializers.CharField(max_length=128, label=_('Password'),
         validators=[validate_password], write_only=True, required=False,
         style={'widget': widgets.PasswordInput})
-    
+
     def validate_password(self, attrs, source):
         """ POST only password """
         if self.instance:
@@ -89,7 +92,7 @@ class SetPasswordHyperlinkedSerializer(HyperlinkedModelSerializer):
         elif 'password' not in attrs:
             raise serializers.ValidationError(_("Password required"))
         return attrs
-    
+
     def validate(self, attrs):
         """ remove password in case is not a real model field """
         try:
@@ -102,7 +105,7 @@ class SetPasswordHyperlinkedSerializer(HyperlinkedModelSerializer):
         if password is not None:
             attrs['password'] = password
         return attrs
-    
+
     def create(self, validated_data):
         password = validated_data.pop('password')
         instance = self.Meta.model(**validated_data)
