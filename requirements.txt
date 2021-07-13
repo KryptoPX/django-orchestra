@@ -10,7 +10,7 @@ Markdown==3.3.4
 djangorestframework==3.12.4
 Pygments==1.6
 django-filter==2.4.0
-jsonfield==0.9.22
+jsonfield==3.1.0
 python-dateutil>=2.7.0
 passlib==1.7.4
 django-iban==0.3.0
