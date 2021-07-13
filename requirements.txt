@@ -8,14 +8,14 @@ kombu==3.0.35
 billiard==3.3.0.23
 Markdown==3.3.4
 djangorestframework==3.12.4
-Pygments==1.6
+Pygments==2.9.0
 django-filter==2.4.0
 jsonfield==3.1.0
 python-dateutil>=2.7.0
 passlib==1.7.4
 django-iban==0.3.0
 requests
-phonenumbers
+phonenumbers==8.12.27
 django-countries
 django-localflavor==3.1
 amqp
