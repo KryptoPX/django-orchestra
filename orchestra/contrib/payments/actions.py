@@ -175,16 +175,6 @@ commit.url_name = 'commit'
 commit.short_description = _("Commit")
 
 
-def delete_selected(modeladmin, request, queryset):
-    """ Has to have same name as admin.actions.delete_selected """
-    related_transactions = helpers.pre_delete_processes(modeladmin, request, queryset)
-    response = actions.delete_selected(modeladmin, request, queryset)
-    if response is None:
-        helpers.post_delete_processes(modeladmin, request, related_transactions)
-    return response
-delete_selected.short_description = actions.delete_selected.short_description
-
-
 def report(modeladmin, request, queryset):
     if queryset.model == Transaction:
         transactions = queryset

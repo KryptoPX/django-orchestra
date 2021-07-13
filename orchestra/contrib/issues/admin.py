@@ -138,7 +138,7 @@ class TicketAdmin(ExtendedModelAdmin):
         'owner__username'
     )
     actions = (
-        mark_as_unread, mark_as_read, 'delete_selected', reject_tickets,
+        mark_as_unread, mark_as_read, reject_tickets,
         resolve_tickets, close_tickets, take_tickets
     )
     sudo_actions = ('delete_selected',)
