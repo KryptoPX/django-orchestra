@@ -261,7 +261,6 @@ PASSLIB_CONFIG = (
     "default = sha512_crypt\n"
     "deprecated = django_pbkdf2_sha1, django_salted_sha1, django_salted_md5, "
     "    django_des_crypt, des_crypt, hex_md5\n"
-    "all__vary_rounds = 0.05\n"
     "django_pbkdf2_sha256__min_rounds = 10000\n"
     "sha512_crypt__min_rounds = 80000\n"
     "staff__django_pbkdf2_sha256__default_rounds = 12500\n"

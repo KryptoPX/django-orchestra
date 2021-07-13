@@ -23,16 +23,16 @@ def link_wrap(view, view_names):
     return wrapper
 
 
-def insert_links(viewset, base_name):
-    collection_links = ['api-root', '%s-list' % base_name]
-    object_links = ['api-root', '%s-list' % base_name, '%s-detail' % base_name]
+def insert_links(viewset, basename):
+    collection_links = ['api-root', '%s-list' % basename]
+    object_links = ['api-root', '%s-list' % basename, '%s-detail' % basename]
     exception_links = ['api-root']
     list_links = ['api-root']
-    retrieve_links = ['api-root', '%s-list' % base_name]
+    retrieve_links = ['api-root', '%s-list' % basename]
     # Determine any `@action` or `@link` decorated methods on the viewset
     for methodname in dir(viewset):
         method = getattr(viewset, methodname)
-        view_name = '%s-%s' % (base_name, methodname.replace('_', '-'))
+        view_name = '%s-%s' % (basename, methodname.replace('_', '-'))
         if hasattr(method, 'collection_bind_to_methods'):
             list_links.append(view_name)
             retrieve_links.append(view_name)

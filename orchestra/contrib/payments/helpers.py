@@ -5,7 +5,6 @@ from .models import Transaction
 
 
 def pre_delete_processes(modeladmin, request, queryset):
-    """ Has to have same name as admin.actions.delete_selected """
     if not queryset:
         messages.warning(request,
             _("No transaction process selected."))

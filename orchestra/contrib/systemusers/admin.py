@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.translation import ugettext_lazy as _
 
 from orchestra.admin import ExtendedModelAdmin, ChangePasswordAdminMixin
@@ -7,7 +7,7 @@ from orchestra.contrib.accounts.actions import list_accounts
 from orchestra.contrib.accounts.admin import SelectAccountAdminMixin
 from orchestra.contrib.accounts.filters import IsActiveListFilter
 
-from .actions import set_permission, create_link, delete_selected
+from .actions import set_permission, create_link
 from .filters import IsMainListFilter
 from .forms import SystemUserCreationForm, SystemUserChangeForm
 from .models import SystemUser
@@ -43,18 +43,18 @@ class SystemUserAdmin(ChangePasswordAdminMixin, SelectAccountAdminMixin, Extende
     form = SystemUserChangeForm
     ordering = ('-id',)
     change_view_actions = (set_permission, create_link)
-    actions = (disable, enable, delete_selected, list_accounts) + change_view_actions
-    
+    actions = (disable, enable, list_accounts) + change_view_actions
+
     def display_main(self, user):
         return user.is_main
     display_main.short_description = _("Main")
     display_main.boolean = True
-    
+
     def display_home(self, user):
         return user.get_home()
     display_home.short_description = _("Home")
     display_home.admin_order_field = 'home'
-    
+
     def get_form(self, request, obj=None, **kwargs):
         form = super(SystemUserAdmin, self).get_form(request, obj, **kwargs)
         form.account = self.account
@@ -65,9 +65,15 @@ class SystemUserAdmin(ChangePasswordAdminMixin, SelectAccountAdminMixin, Extende
             formfield = form.base_fields['groups']
             formfield.queryset = formfield.queryset.exclude(id=obj.id)
         return form
-    
+
     def has_delete_permission(self, request, obj=None):
         if obj and obj.is_main:
+            self.message_user(request, _(
+                "You have selected one main system user (%(account)s), which can not be deleted.",
+                ) % {'account': obj},
+                messages.ERROR,
+            )
+
             return False
         return super(SystemUserAdmin, self).has_delete_permission(request, obj)
 

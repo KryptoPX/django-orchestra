@@ -65,12 +65,12 @@ class LinkHeaderRouter(DefaultRouter):
         APIRoot.router = self
         return APIRoot.as_view()
 
-    def register(self, prefix, viewset, base_name=None):
+    def register(self, prefix, viewset, basename=None):
         """ inserts link headers on every viewset """
-        if base_name is None:
-            base_name = self.get_default_basename(viewset)
-        insert_links(viewset, base_name)
-        self.registry.append((prefix, viewset, base_name))
+        if basename is None:
+            basename = self.get_default_basename(viewset)
+        insert_links(viewset, basename)
+        self.registry.append((prefix, viewset, basename))
 
     def get_viewset(self, prefix_or_model):
         for _prefix, viewset, __ in self.registry:
