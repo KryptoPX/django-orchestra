@@ -84,14 +84,14 @@ class SetPasswordHyperlinkedSerializer(HyperlinkedModelSerializer):
         validators=[validate_password], write_only=True, required=False,
         style={'widget': widgets.PasswordInput})
 
-    def validate_password(self, attrs, source):
+    def validate_password(self, value):
         """ POST only password """
         if self.instance:
-            if 'password' in attrs:
+            if value:
                 raise serializers.ValidationError(_("Can not set password"))
-        elif 'password' not in attrs:
+        elif not value:
             raise serializers.ValidationError(_("Password required"))
-        return attrs
+        return value
 
     def validate(self, attrs):
         """ remove password in case is not a real model field """
