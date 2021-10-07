@@ -36,6 +36,30 @@ class MailboxSerializer(AccountSerializerMixin, SetPasswordHyperlinkedSerializer
         postonly_fields = ('name', 'password')
 
 
+class MailboxWritableSerializer(AccountSerializerMixin, SetPasswordHyperlinkedSerializer):
+    addresses = serializers.HyperlinkedRelatedField(many=True, view_name='address-detail', queryset=Address.objects.all())
+
+    class Meta:
+        model = Mailbox
+        fields = (
+            'url', 'id', 'name', 'password', 'filtering', 'custom_filtering', 'addresses', 'is_active'
+        )
+        postonly_fields = ('name', 'password')
+
+    @transaction.atomic
+    def create(self, validated_data):
+        addresses = validated_data.pop('addresses', [])
+        instance = super().create(validated_data)
+        instance.addresses.set(addresses)
+        return instance
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        addresses = validated_data.pop('addresses', [])
+        instance.addresses.set(addresses)
+        return super().update(instance, validated_data)
+
+
 class RelatedMailboxSerializer(AccountSerializerMixin, RelatedHyperlinkedModelSerializer):
     class Meta:
         model = Mailbox

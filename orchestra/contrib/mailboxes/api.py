@@ -4,7 +4,7 @@ from orchestra.api import router, SetPasswordApiMixin, LogApiMixin
 from orchestra.contrib.accounts.api import AccountApiMixin
 
 from .models import Address, Mailbox
-from .serializers import AddressSerializer, MailboxSerializer
+from .serializers import AddressSerializer, MailboxSerializer, MailboxWritableSerializer
 
 
 class AddressViewSet(LogApiMixin, AccountApiMixin, viewsets.ModelViewSet):
@@ -16,6 +16,12 @@ class AddressViewSet(LogApiMixin, AccountApiMixin, viewsets.ModelViewSet):
 class MailboxViewSet(LogApiMixin, SetPasswordApiMixin, AccountApiMixin, viewsets.ModelViewSet):
     queryset = Mailbox.objects.prefetch_related('addresses__domain').all()
     serializer_class = MailboxSerializer
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return self.serializer_class
+
+        return MailboxWritableSerializer
 
 
 router.register(r'mailboxes', MailboxViewSet)
