@@ -93,7 +93,7 @@ Remember create a database for your project and give permitions for the correct 
 ```
 psql -U postgres
 psql (12.4)
-Digite «help».
+Digite «help» para obtener ayuda.
 
 postgres=# CREATE database orchesta;
 postgres=# CREATE USER orchesta WITH PASSWORD 'orquesta';

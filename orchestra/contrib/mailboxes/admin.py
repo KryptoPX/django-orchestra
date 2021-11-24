@@ -252,7 +252,7 @@ class AddressAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
     def display_mailboxes(self, address):
         boxes = address.mailboxes.all()
         return format_html_join(
-            '<br>', '<a href="{}">{}</a>',
+            mark_safe('<br>'), '<a href="{}">{}</a>',
             [(change_url(mailbox), mailbox.name) for mailbox in boxes]
         )
     display_mailboxes.short_description = _("Mailboxes")
@@ -261,7 +261,7 @@ class AddressAdmin(SelectAccountAdminMixin, ExtendedModelAdmin):
     def display_all_mailboxes(self, address):
         boxes = address.get_mailboxes()
         return format_html_join(
-            '<br>', '<a href="{}">{}</a>',
+            mark_safe('<br>'), '<a href="{}">{}</a>',
             [(change_url(mailbox), mailbox.name) for mailbox in boxes]
         )
     display_all_mailboxes.short_description = _("Mailboxes links")
