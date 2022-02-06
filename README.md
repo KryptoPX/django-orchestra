@@ -18,7 +18,10 @@ De momento, hace falta tener instalado VSCode, mas tarde creare un entorno de de
 ## Pasos para iniciar el desarollo
 
 1. Descargar esta rama de desarollo
-2. Ejecutar el comando `docker-compose build`
+2. Segun lo que quiera el usuario, hay varias opciones
+   - Run_Env.sh workspace --> Se añade las carpetas al entorno de desarrollo
+   - Run_Env.sh remote    --> Se crean ventanas especificas para el entorno de desarollo (Mayor prioridad)
+   - Run_Env.sh none      --> Simplente construye el entorno sin interaccionar con VSCode
 
 Una vez ejecutado lso comandos anteriores, tendremos que crear dos ventanas 1 por cada contenedor
 

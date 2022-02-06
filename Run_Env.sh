@@ -1,7 +1,7 @@
 if [ "$#" -eq "0" ]
 then
     me="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
-    echo "Usage on this script ${me} [-n|-a|-0]"
+    echo "Usage on this script ${me} [Option]"
     echo ""
     echo "workspace   Open folders in workspaces"
     echo "remote      Open folders in VSCode-remote"
