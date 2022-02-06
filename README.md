@@ -23,8 +23,8 @@ De momento, hace falta tener instalado VSCode, mas tarde creare un entorno de de
    - Run_Env.sh remote    --> Se crean ventanas especificas para el entorno de desarollo (Mayor prioridad)
    - Run_Env.sh none      --> Simplente construye el entorno sin interaccionar con VSCode
 
-Una vez ejecutado lso comandos anteriores, tendremos que crear dos ventanas 1 por cada contenedor
+carpeta src hace de portal a los contenedores correspondientes
 
-Dejo aqui una imagen con los pasos muy encillos de como abrir los contenedores
 
+Dejo aqui una imagen con los pasos muy encillos de como abrir los contenedores en el modo remote
 ![Pasos](RemoteENVS.png)
