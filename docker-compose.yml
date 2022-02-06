@@ -2,19 +2,21 @@ version: '3'
 services:
   dj-musician:
     build:
-      context: .
+      dockerfile: ../../Dockerfile
+      context: ./docker/musician
       target: musician
     volumes:
-      - '.:/workspace:cached'
+      - './src/musician/:/workspace/musician/'
     command: sleep infinity # Se usa para evitar que el contenedor se cerre
     links:
       - dj-orchestra
   dj-orchestra:
     build:
-      context: .
+      dockerfile: ../../Dockerfile
+      context: ./docker/orchestra
       target: orchestra
     volumes:
-      - '.:/workspace:cached'
+      - './src/orchestra/:/workspace/orchestra/'
     command: sleep infinity # Se usa para evitar que el contenedor se cerre
     
 

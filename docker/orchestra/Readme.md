@@ -10,6 +10,6 @@ este contenedor el repositorio actualizado de django-orchestra.
 ## Comando para iniciar el servidor
 
 ```
-./runServer.sh
+./scripts/runServer.sh
 ```
 
