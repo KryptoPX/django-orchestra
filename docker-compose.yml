@@ -5,6 +5,8 @@ services:
       dockerfile: ../../Dockerfile
       context: ./docker/musician
       target: musician
+    ports:
+      - "8080:8080"
     volumes:
       - './src/musician/:/workspace/musician/'
     command: sleep infinity # Se usa para evitar que el contenedor se cerre
@@ -15,6 +17,8 @@ services:
       dockerfile: ../../Dockerfile
       context: ./docker/orchestra
       target: orchestra
+    ports:
+      - "9999:9999"
     volumes:
       - './src/orchestra/:/workspace/orchestra/'
     command: sleep infinity # Se usa para evitar que el contenedor se cerre
