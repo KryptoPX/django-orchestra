@@ -1,0 +1,20 @@
+{
+    "name": "DJ-Orchestra",
+    "dockerComposeFile": [
+        "../../docker-compose.yml"
+    ],
+    "service": "dj-orchestra",
+    "shutdownAction": "none",
+    "workspaceFolder": "/workspace/src/orchestra",
+    "remoteUser": "orchestra",
+    "postCreateCommand": "bash ../../docker/orchestra.sh",
+    "extensions": [
+        "donjayamanne.python-extension-pack",
+        "usernamehw.errorlens"
+    ],
+    "settings": {
+        "python.formatting.provider": "autopep8",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true
+    }
+}
